@@ -4,19 +4,12 @@ import { LAYER_NAMES } from "@/lib/format";
 import { Logo } from "./logo";
 import { SearchDialog, type SearchEntry } from "./search-dialog";
 
-/** Rendered verbatim as both the label and the href, so they cannot diverge. */
-const API_ROUTES = [
-  "/api/skills",
-  "/api/categories",
-  "/api/layers",
-  "/api/search?q=incident",
-];
-
 const NAV = [
   { href: "/skills", label: "Skills" },
   { href: "/categories", label: "Categories" },
   { href: "/layers", label: "Layers" },
   { href: "/compose", label: "Composer" },
+  { href: "/api-reference", label: "API" },
   { href: "/contribute", label: "Contribute" },
 ];
 
@@ -138,27 +131,16 @@ export async function SiteFooter() {
         </div>
         <div>
           <span className="label">Machine interface</span>
-          <ul className="mt-3 space-y-1.5 font-mono text-[0.8125rem] text-[var(--color-ink-muted)]">
-            {API_ROUTES.map((route) => (
-              <li key={route}>
-                {/*
-                  A plain anchor, not next/link: Link prefetches on hover and on
-                  viewport entry, which would fire real API requests just from
-                  scrolling the footer into view. These also open in a new tab so
-                  a reader landing on raw JSON does not lose the site.
-                */}
-                <a
-                  href={route}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="hover:text-[var(--color-ink)]"
-                >
-                  GET {route}
-                  <span className="sr-only"> (opens in a new tab)</span>
-                </a>
-              </li>
-            ))}
-          </ul>
+          <p className="mt-3 text-[0.875rem] leading-relaxed text-[var(--color-ink-muted)]">
+            A public, CORS-open read API over the registry. The same definitions that render this
+            site are what an agent consumes.
+          </p>
+          <Link
+            href="/api-reference"
+            className="mt-3 inline-block font-mono text-[0.8125rem] text-[var(--color-accent)] hover:text-[var(--color-accent-ink)]"
+          >
+            API reference →
+          </Link>
         </div>
         <div>
           <span className="label">Definition</span>

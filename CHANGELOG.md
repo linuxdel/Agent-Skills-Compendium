@@ -57,10 +57,18 @@ project uses [Semantic Versioning](https://semver.org/).
   format without introducing a second source of truth
 - Interoperability documentation positioning the project relative to tool
   protocols, packaging formats and agent runtimes
+- `/api-reference` page documenting all seven endpoints with parameters,
+  response shapes and working examples, rendered from a single route definition
+  so the documentation cannot drift from the API
 - README sections covering ecosystem position and what the project is not
 - Authorship and provenance documentation
 
 ### Fixed
+
+- Footer API links used `next/link`, which prefetches on hover and on viewport
+  entry, firing real requests against four endpoints just from scrolling the
+  footer into view; and their screen-reader hints polluted the page's text
+  content, which matters on a site meant to be read by agents
 
 - Registry filter input could be clipped by the CLEAR control, truncating its
   placeholder text; the input now shrinks correctly within its row

@@ -261,6 +261,7 @@ export default async function HomePage() {
           eyebrow="Machine interface"
           title="Written for agents as much as for people"
           lead="Every skill is a validated document against a single canonical schema. The same definition that renders this page is what an agent consumes."
+          action={<ArrowLink href="/api-reference">API reference</ArrowLink>}
         />
         <div className="grid gap-px border border-[var(--color-rule)] bg-[var(--color-rule)] md:grid-cols-2">
           <div className="bg-[var(--color-surface)] p-6">

@@ -266,6 +266,7 @@ npm run export:skills     # dist/skills/**/SKILL.md packages
 | [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) | The five-layer model and skill specification |
 | [docs/TAXONOMY.md](docs/TAXONOMY.md) | All 20 categories with their capabilities |
 | [docs/INTEROPERABILITY.md](docs/INTEROPERABILITY.md) | Position relative to MCP, SKILL.md and agent runtimes |
+| `/api-reference` | Live API documentation, rendered from the route definitions |
 | [evaluation/](evaluation/evaluation-framework.md) | Skill evaluation framework and result schema |
 | [governance/](governance/skill-governance.md) | Skill governance model and policy schema |
 
