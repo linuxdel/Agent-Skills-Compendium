@@ -1,0 +1,149 @@
+skill:
+  id: skl-threat-model-construction
+  name: Threat Model Construction
+  slug: threat-model-construction
+  version: 1.1.0
+  category: cybersecurity
+  layer: L4
+  domain: security
+  description: Identify how a system could be attacked by reasoning from its trust boundaries, assets and adversaries rather than from a checklist.
+  purpose: >-
+    Checklist security finds the vulnerabilities someone else already thought of.
+    This skill derives threats from the specific system — what an attacker would
+    want, where trust changes hands, and what the system assumes — and produces
+    mitigations ranked by the risk they actually remove.
+  trigger: >-
+    A system is being designed or materially changed, or an existing system has
+    never been modelled.
+  inputs:
+    - name: system_description
+      required: true
+      type: string
+      description: Components, data flows, trust boundaries and deployment context.
+    - name: assets
+      required: true
+      type: string[]
+      description: What is worth protecting — data, funds, availability, reputation, safety.
+    - name: adversaries
+      required: false
+      type: string[]
+      description: Relevant attacker classes and their capabilities, defaulting to external unauthenticated, authenticated user, and insider.
+    - name: existing_controls
+      required: false
+      type: string[]
+      description: Controls already in place, so the model assesses residual rather than raw risk.
+  prerequisites: []
+  tools:
+    - llm-inference
+    - code-search
+    - file-system
+    - document-generator
+    - policy-engine
+  dependencies:
+    - An accurate architecture description including data flows
+  procedure:
+    - step: Draw the trust boundaries
+      description: >-
+        Identify every point where data or control crosses between differently
+        trusted zones. Threats concentrate at boundaries.
+    - step: Enumerate assets and their value to an attacker
+      description: >-
+        State what an attacker gains from each asset, since attacker incentive
+        drives which threats are realistic.
+    - step: Model adversaries and capabilities
+      description: >-
+        Define what each adversary class can do, including access they legitimately
+        hold. Insider and compromised-credential paths are routinely omitted.
+    - step: Derive threats per boundary
+      description: >-
+        Work systematically through spoofing, tampering, repudiation, information
+        disclosure, denial of service and elevation at each boundary.
+    - step: Test the system's assumptions
+      description: >-
+        Identify what the design assumes to be true — input validity, network
+        trust, client behaviour — and treat each assumption as an attack surface.
+    - step: Assess residual risk
+      description: >-
+        Evaluate each threat against existing controls to determine what remains,
+        rather than listing threats already mitigated.
+    - step: Rank and propose mitigations
+      description: >-
+        Rank by realistic impact and attacker cost, and propose mitigations that
+        remove the threat rather than detecting it after the fact.
+    - step: Record accepted risks
+      description: >-
+        Any threat not mitigated is an accepted risk and requires a named owner.
+  decision_rules:
+    - condition: A threat requires capabilities no relevant adversary has
+      action: Record it as out of scope with the reasoning rather than mitigating it.
+    - condition: A control depends on client-side enforcement
+      action: Treat it as absent; client-side controls do not constrain an attacker.
+    - condition: A boundary has no authentication or authorisation
+      action: Raise it as a critical finding regardless of network position.
+    - condition: A threat affects safety or funds
+      action: Require a preventive mitigation, not a detective one.
+    - condition: A threat is accepted rather than mitigated
+      action: Require a named owner and a review date.
+  outputs:
+    - name: threat_model
+      type: document
+      description: Boundaries, assets, adversaries, threats, existing controls and residual risk.
+    - name: threat_register
+      type: json
+      description: Each threat with impact, likelihood, existing control and residual rating.
+    - name: mitigation_plan
+      type: json
+      description: Ranked mitigations with owners and the risk each removes.
+    - name: accepted_risks
+      type: json
+      description: Threats not mitigated, with owner and review date.
+  validation:
+    - check: Every trust boundary has been analysed across all threat categories.
+    - check: Insider and compromised-credential adversaries are included.
+    - check: Residual risk is assessed against existing controls, not raw risk.
+    - check: Every unmitigated threat has a named owner and a review date.
+  failure_modes:
+    - failure: A checklist is applied and system-specific threats are missed.
+      mitigation: Derive threats from boundaries and assumptions, using categories only as a completeness check.
+    - failure: Only external attackers are modelled and the insider path is ignored.
+      mitigation: Include insider and credential-compromise adversaries by default.
+    - failure: Client-side validation is counted as a control.
+      mitigation: Treat all client-side enforcement as absent.
+    - failure: The model lists threats already mitigated and buries the residual ones.
+      mitigation: Report residual risk as the primary output.
+  escalation:
+    - condition: A critical unmitigated threat exists in a live system.
+      action: Escalate immediately to the security owner rather than filing it in a report.
+    - condition: The system handles regulated data outside its documented scope.
+      action: Escalate to privacy and compliance.
+  examples:
+    - title: Threat model for a partner webhook ingress
+      input:
+        assets: [Order data, Payment authorisations]
+        existing_controls: [Shared secret signature, IP allowlist]
+      output:
+        critical_findings: [Signature verified after body parsing — parser is reachable pre-auth]
+        accepted_risks: [Replay beyond the 5-minute window, owner named]
+    - title: Threat model for an internal admin tool
+      input:
+        adversaries: [Compromised employee credential, Malicious insider]
+      output:
+        threat_register: 22 threats, 6 with high residual risk
+        mitigation_plan: [Step-up authentication on destructive actions]
+  related_skills:
+    prerequisites: []
+    complementary: [secure-code-review, vulnerability-triage, tool-permission-scoping]
+    successors: [security-alert-investigation, agent-red-teaming]
+    related: [architecture-decision-record, technical-due-diligence]
+  complexity: expert
+  build_speed: 2
+  shareability: 3
+  maturity: production
+  tags: [security, threat-model, boundaries, adversaries, risk]
+  author: Agent Skills Compendium
+  license: CC-BY-4.0
+  risk_level: high
+  required_permissions: [repo.read, document.write]
+  restricted_actions: [Exploiting identified vulnerabilities, Testing against production without authorisation]
+  created_at: "2025-01-29T00:00:00Z"
+  updated_at: "2025-08-26T00:00:00Z"

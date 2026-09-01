@@ -1,0 +1,151 @@
+skill:
+  id: skl-build-buy-partner-decision
+  name: Build, Buy or Partner Decision
+  slug: build-buy-partner-decision
+  version: 1.0.0
+  category: business-strategy
+  layer: L1
+  domain: null
+  description: Decide how to acquire a capability by comparing total cost, control, speed and reversibility across build, buy and partner paths.
+  purpose: >-
+    These decisions are usually made on sticker price and delivery-date optimism,
+    and regretted on maintenance cost and lock-in. This skill forces total cost of
+    ownership over a stated horizon, weights strategic control explicitly, and
+    scores reversibility as a first-class criterion.
+  trigger: >-
+    A capability is needed that the organisation does not have, and more than one
+    acquisition path is viable.
+  inputs:
+    - name: capability
+      required: true
+      type: string
+      description: The capability needed, in outcome terms rather than product terms.
+    - name: strategic_role
+      required: true
+      type: string
+      description: Whether this capability is a differentiator, a table stake or a commodity. This dominates the decision.
+    - name: constraints
+      required: true
+      type: string[]
+      description: Time, budget, staffing, regulatory and existing commitments.
+    - name: horizon
+      required: false
+      type: string
+      description: The period over which cost is compared, defaulting to three years.
+  prerequisites: []
+  tools:
+    - spreadsheet
+    - web-search
+    - llm-inference
+    - document-generator
+  dependencies:
+    - Credible internal cost data for the build path
+  procedure:
+    - step: Classify the capability strategically
+      description: >-
+        Determine whether it differentiates. Building commodities and buying
+        differentiators are the two systematic errors this step prevents.
+    - step: Define the options concretely
+      description: >-
+        Specify each path as a real option with a named vendor, partner or team
+        shape, not as an abstract category.
+    - step: Model total cost over the horizon
+      description: >-
+        Include build, integration, maintenance, on-call, migration, contract
+        escalation and the cost of the staff who will not be doing something else.
+    - step: Score control and dependency
+      description: >-
+        Assess what each path gives up — roadmap control, data access, pricing
+        power, exit cost — and treat these as costs.
+    - step: Score speed honestly
+      description: >-
+        Compare time to production including integration and procurement, not
+        time to first demonstration.
+    - step: Score reversibility
+      description: >-
+        Estimate the cost of changing course in a year under each path. High
+        reversibility earns real credit under uncertainty.
+    - step: Test against failure scenarios
+      description: >-
+        Ask what happens if the vendor is acquired, the partner deprioritises, or
+        the internal team loses its two key engineers.
+    - step: Recommend with conditions
+      description: >-
+        State the recommendation, the assumptions it depends on, and the trigger
+        that should prompt reconsideration.
+  decision_rules:
+    - condition: The capability is a genuine differentiator
+      action: Weight control heavily and treat buying as a strategic dependency rather than a cost saving.
+    - condition: The capability is a commodity
+      action: Weight total cost and speed; building requires an explicit justification.
+    - condition: Requirements are still changing
+      action: Prefer the most reversible path even at higher nominal cost.
+    - condition: The build estimate omits maintenance and on-call
+      action: Reject the estimate and rebuild it; this omission drives most build regret.
+    - condition: A single vendor would hold critical data or a critical path
+      action: Require an exit plan as a condition of the buy recommendation.
+  outputs:
+    - name: recommendation
+      type: document
+      description: The chosen path, its conditions, and the trade-offs accepted.
+    - name: cost_model
+      type: json
+      description: Total cost of ownership per path across the horizon, itemised.
+    - name: scorecard
+      type: json
+      description: Control, speed, reversibility and risk scores per path with reasoning.
+    - name: reconsideration_trigger
+      type: string
+      description: The observable condition that should reopen the decision.
+  validation:
+    - check: The build path's cost includes maintenance, on-call and opportunity cost.
+    - check: Reversibility is scored for every option.
+    - check: The strategic classification is stated and drives the weighting.
+    - check: Failure scenarios were tested for each path.
+  failure_modes:
+    - failure: A build is chosen on an estimate that excludes years of maintenance.
+      mitigation: Require full total cost of ownership over the stated horizon.
+    - failure: A differentiator is outsourced and the advantage erodes.
+      mitigation: Classify strategically before comparing costs.
+    - failure: Speed is measured to demo rather than to production.
+      mitigation: Define speed as time to production including procurement and integration.
+    - failure: Lock-in is discovered at renewal.
+      mitigation: Score exit cost explicitly and require an exit plan for buy paths.
+  escalation:
+    - condition: The decision commits spend or dependency beyond the requester's authority.
+      action: Escalate to the accountable executive with the scorecard.
+    - condition: A partner path requires sharing regulated or customer data.
+      action: Route to legal and privacy review before recommending.
+  examples:
+    - title: Acquiring a document extraction capability
+      input:
+        capability: Extract structured fields from customer-supplied PDFs
+        strategic_role: table stake
+        horizon: 3 years
+      output:
+        recommendation: Buy, with an exit plan and an abstraction layer at the boundary
+        reconsideration_trigger: If extraction accuracy becomes a competitive claim
+    - title: Acquiring a recommendation engine
+      input:
+        capability: Personalised ranking on the core surface
+        strategic_role: differentiator
+      output:
+        recommendation: Build, staged behind a bought baseline for the first two quarters
+        scorecard: {control: build strongly favoured, speed: buy favoured, reversibility: hybrid best}
+  related_skills:
+    prerequisites: []
+    complementary: [technical-due-diligence, market-sizing, architecture-decision-record]
+    successors: [risk-weighted-recommendation, vendor-evaluation]
+    related: [scenario-planning, executive-brief]
+  complexity: advanced
+  build_speed: 2
+  shareability: 3
+  maturity: beta
+  tags: [strategy, decisions, tco, vendors, control]
+  author: Agent Skills Compendium
+  license: CC-BY-4.0
+  risk_level: high
+  required_permissions: [document.write]
+  restricted_actions: [Committing to a vendor without an exit plan, Signing contracts]
+  created_at: "2025-02-19T00:00:00Z"
+  updated_at: "2025-08-09T00:00:00Z"

@@ -1,0 +1,146 @@
+skill:
+  id: skl-risk-weighted-recommendation
+  name: Risk-Weighted Recommendation
+  slug: risk-weighted-recommendation
+  version: 1.0.0
+  category: executive-intelligence
+  layer: L1
+  domain: null
+  description: Produce a recommendation that accounts for the asymmetry between upside and downside, not just for the expected value.
+  purpose: >-
+    Expected-value reasoning recommends bets that would end the organisation one
+    time in twenty. This skill separates reversible from irreversible decisions,
+    weights downside by survivability rather than by probability alone, and states
+    the conditions under which the recommendation is wrong.
+  trigger: >-
+    A decision must be made where outcomes are uncertain and the downside is not
+    symmetric with the upside.
+  inputs:
+    - name: decision
+      required: true
+      type: string
+      description: The options under consideration, including doing nothing.
+    - name: outcome_estimates
+      required: true
+      type: string
+      description: Expected outcomes per option with their uncertainty.
+    - name: risk_capacity
+      required: true
+      type: string
+      description: What loss the organisation can absorb, which is the real constraint.
+    - name: reversibility
+      required: true
+      type: string
+      description: Whether and how each option can be undone, and at what cost.
+  prerequisites:
+    - validate-analysis-assumptions
+  tools:
+    - llm-inference
+    - spreadsheet
+    - statistics-engine
+    - document-generator
+  dependencies:
+    - Outcome estimates with stated uncertainty rather than point forecasts
+  procedure:
+    - step: Classify by reversibility
+      description: >-
+        Separate decisions that can be undone cheaply from those that cannot.
+        Reversible decisions should be made fast; irreversible ones deserve the analysis.
+    - step: Bound the downside
+      description: >-
+        Establish the worst credible outcome per option, not the expected one, and
+        test it against risk capacity.
+    - step: Test for ruin
+      description: >-
+        Identify any option whose worst case is unsurvivable. Such options are
+        excluded regardless of expected value.
+    - step: Weight by asymmetry
+      description: >-
+        Where downside exceeds upside in consequence, weight accordingly rather
+        than netting them arithmetically.
+    - step: Value optionality
+      description: >-
+        Credit options that preserve future choices, and charge those that
+        foreclose them.
+    - step: Identify the cheapest resolving test
+      description: >-
+        Determine whether a small experiment would resolve the main uncertainty
+        for materially less than the full commitment.
+    - step: Recommend with falsifying conditions
+      description: >-
+        State the recommendation, what would make it wrong, and what should be
+        monitored.
+  decision_rules:
+    - condition: An option's worst credible case exceeds risk capacity
+      action: Exclude it regardless of expected value.
+    - condition: The decision is cheaply reversible
+      action: Recommend acting now and learning, rather than analysing further.
+    - condition: A small test would resolve the main uncertainty
+      action: Recommend the test before the commitment.
+    - condition: Downside and upside are of different orders
+      action: Weight by consequence rather than netting expected values.
+    - condition: An option forecloses future options
+      action: Charge that cost explicitly in the comparison.
+  outputs:
+    - name: recommendation
+      type: document
+      description: The recommended option, its conditions, and what would falsify it.
+    - name: downside_analysis
+      type: json
+      description: Worst credible case per option against risk capacity.
+    - name: reversibility_assessment
+      type: json
+      description: Reversal cost and time per option.
+    - name: resolving_test
+      type: object
+      description: The cheapest experiment that would materially reduce the uncertainty.
+  validation:
+    - check: Worst credible downside is bounded for every option and compared to risk capacity.
+    - check: Reversibility is assessed and drives the depth of analysis.
+    - check: Ruinous options are excluded rather than discounted by probability.
+    - check: Falsifying conditions are stated and observable.
+  failure_modes:
+    - failure: Expected-value reasoning recommends a bet with an unsurvivable tail.
+      mitigation: Apply the ruin test as an exclusion, not as a weighting.
+    - failure: A reversible decision receives months of analysis.
+      mitigation: Classify by reversibility first and act fast where reversal is cheap.
+    - failure: An option that forecloses future choices is scored as equivalent.
+      mitigation: Value optionality explicitly.
+    - failure: The recommendation is hedged into unactionability.
+      mitigation: State one recommendation and put the uncertainty into falsifying conditions.
+  escalation:
+    - condition: Every option's downside exceeds risk capacity.
+      action: Escalate the constraint itself; the decision as framed cannot be made safely.
+    - condition: The decision commits the organisation beyond the requester's authority.
+      action: Escalate with the downside analysis to the accountable executive.
+  examples:
+    - title: Recommending on a large infrastructure migration
+      input:
+        risk_capacity: Cannot absorb more than two weeks of degraded service
+        reversibility: Partial — data migration is one-way after cutover
+      output:
+        recommendation: Staged migration with dual-write, cutover only after a full parallel run
+        resolving_test: Two-week parallel run on the highest-volume tenant
+    - title: Recommending on an exclusive partnership
+      input:
+        decision: Sign a three-year exclusive distribution agreement
+      output:
+        downside_analysis: Worst case forecloses the direct channel for three years
+        recommendation: Non-exclusive with a performance-triggered exclusivity option
+  related_skills:
+    prerequisites: [validate-analysis-assumptions]
+    complementary: [scenario-planning, situation-assessment, build-buy-partner-decision]
+    successors: [executive-brief, architecture-decision-record]
+    related: [vulnerability-triage, capacity-forecasting]
+  complexity: advanced
+  build_speed: 2
+  shareability: 3
+  maturity: beta
+  tags: [decisions, risk, asymmetry, reversibility, executive]
+  author: Agent Skills Compendium
+  license: CC-BY-4.0
+  risk_level: medium
+  required_permissions: [document.write]
+  restricted_actions: [Recommending an option whose worst case exceeds risk capacity]
+  created_at: "2025-04-05T00:00:00Z"
+  updated_at: "2025-08-16T00:00:00Z"

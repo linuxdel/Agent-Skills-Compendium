@@ -1,0 +1,154 @@
+skill:
+  id: skl-production-incident-diagnosis
+  name: Production Incident Diagnosis
+  slug: production-incident-diagnosis
+  version: 1.2.0
+  category: devops-infrastructure
+  layer: L4
+  domain: operations
+  description: Find what is breaking a live system fast enough to restore service, without destroying the evidence needed afterwards.
+  purpose: >-
+    Incident diagnosis is debugging under a clock, where the cost of a wrong
+    hypothesis is measured in downtime. This skill prioritises restoration over
+    understanding, narrows by blast radius and change correlation, and preserves
+    what a post-incident review will need.
+  trigger: >-
+    A production system is degraded or unavailable and the cause is not known.
+  inputs:
+    - name: symptom
+      required: true
+      type: string
+      description: What users or monitors observe, with onset time.
+    - name: blast_radius
+      required: true
+      type: string
+      description: Who and what is affected — regions, tenants, endpoints, percentage.
+    - name: recent_changes
+      required: true
+      type: string
+      description: Deployments, configuration changes, feature flags and infrastructure changes in the window.
+    - name: severity
+      required: true
+      type: string
+      description: Business impact, which determines whether to restore first or diagnose first.
+  prerequisites: []
+  tools:
+    - observability
+    - log-store
+    - deployment-system
+    - feature-flags
+    - shell
+    - llm-inference
+    - chat-platform
+  dependencies:
+    - Read access to telemetry and change history for the affected systems
+  procedure:
+    - step: Establish impact and declare
+      description: >-
+        Quantify who is affected and how badly, and declare severity so the right
+        people are involved before diagnosis consumes the window.
+    - step: Restore first where a safe path exists
+      description: >-
+        If a rollback, failover or flag disable would plausibly restore service,
+        do that before completing diagnosis. Understanding can follow.
+    - step: Preserve evidence before changing anything
+      description: >-
+        Capture logs, metrics, traces and current state, since restoration
+        actions frequently erase the cause.
+    - step: Correlate with change
+      description: >-
+        Compare onset against the change timeline. Most incidents are caused by a
+        change, and this is the cheapest hypothesis to test.
+    - step: Narrow by blast radius shape
+      description: >-
+        Use the shape of the impact — one region, one tenant class, one code path
+        — to eliminate whole classes of cause.
+    - step: Check dependencies and saturation
+      description: >-
+        Examine upstream dependencies, resource saturation and quota limits before
+        deep application-level investigation.
+    - step: Form and test the hypothesis
+      description: >-
+        State a mechanism and test it with a check that discriminates between
+        candidates rather than merely confirming one.
+    - step: Record the timeline continuously
+      description: >-
+        Log actions, observations and times as they happen; reconstruction after
+        the fact is unreliable.
+  decision_rules:
+    - condition: A recent change correlates with onset and rollback is safe
+      action: Roll back first and diagnose afterwards.
+    - condition: Impact is growing
+      action: Prioritise containment over root cause entirely.
+    - condition: The blast radius is a single tenant or region
+      action: Investigate configuration, data and capacity for that scope before application logic.
+    - condition: Multiple changes landed in the window
+      action: Bisect by reverting in reverse order rather than reasoning about which is responsible.
+    - condition: Restoration would destroy evidence
+      action: Capture evidence first; the capture takes seconds and the review needs it.
+  outputs:
+    - name: diagnosis
+      type: document
+      description: Mechanism, contributing factors, and the evidence supporting each.
+    - name: timeline
+      type: json
+      description: Ordered record of observations and actions with timestamps.
+    - name: restoration_actions
+      type: json
+      description: What was done to restore service and what state it left the system in.
+    - name: followup_items
+      type: json
+      description: Work required to prevent recurrence, with owners.
+  validation:
+    - check: Evidence was captured before restoration actions changed system state.
+    - check: The change timeline was correlated against onset.
+    - check: The diagnosis explains the observed blast radius shape.
+    - check: A continuous timeline exists with timestamps.
+  failure_modes:
+    - failure: Deep investigation continues while users remain down and a rollback was available.
+      mitigation: Restore first whenever a safe restoration path exists.
+    - failure: Restoration erases the evidence and the cause is never found.
+      mitigation: Capture evidence before acting, as a fast mandatory step.
+    - failure: A dependency outage is investigated as an application defect.
+      mitigation: Check dependencies and saturation before application logic.
+    - failure: The timeline is reconstructed afterwards and is wrong.
+      mitigation: Record actions and observations as they occur.
+  escalation:
+    - condition: Impact involves data loss, corruption or a security boundary.
+      action: Escalate to the data owner and security immediately; this changes the response entirely.
+    - condition: Restoration requires an action beyond the responder's authority.
+      action: Escalate rather than acting; unauthorised production changes compound incidents.
+    - condition: The incident exceeds the responder's expertise or duration limits.
+      action: Escalate and hand off with the timeline; fatigue causes second incidents.
+  examples:
+    - title: Diagnosing a regional latency incident
+      input:
+        symptom: p99 latency 20x normal in one region
+        recent_changes: [Config change to connection pool sizing 12 minutes before onset]
+      output:
+        restoration_actions: Config reverted; service restored in 6 minutes
+        diagnosis: Pool exhaustion under regional traffic skew; the change halved pool size
+    - title: Diagnosing partial checkout failures
+      input:
+        symptom: 4 percent of checkouts failing with a generic error
+        blast_radius: One payment method, all regions
+      output:
+        diagnosis: Upstream processor certificate rotation; our pinned trust store was stale
+        followup_items: [Remove certificate pinning or automate trust store updates]
+  related_skills:
+    prerequisites: []
+    complementary: [debug-root-cause-analysis, runbook-authoring, security-alert-investigation]
+    successors: [release-readiness-check, capacity-forecasting]
+    related: [metric-anomaly-diagnosis, agent-rollback]
+  complexity: expert
+  build_speed: 3
+  shareability: 3
+  maturity: production
+  tags: [incidents, operations, restoration, observability, on-call]
+  author: Agent Skills Compendium
+  license: CC-BY-4.0
+  risk_level: critical
+  required_permissions: [observability.read, logs.read, deploy.rollback]
+  restricted_actions: [Production changes beyond approved restoration actions, Modifying data to clear symptoms]
+  created_at: "2025-01-17T00:00:00Z"
+  updated_at: "2025-08-30T00:00:00Z"

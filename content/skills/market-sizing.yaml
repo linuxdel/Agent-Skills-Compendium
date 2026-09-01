@@ -1,0 +1,147 @@
+skill:
+  id: skl-market-sizing
+  name: Market Sizing
+  slug: market-sizing
+  version: 1.0.0
+  category: business-strategy
+  layer: L1
+  domain: null
+  description: Estimate the size of a market from named assumptions, with the estimate's sensitivity to each assumption made explicit.
+  purpose: >-
+    A market size is only as good as the assumption it is most sensitive to, yet
+    that assumption is usually invisible in the final number. This skill builds
+    the estimate bottom up, states each assumption and its source, and reports
+    the range and the drivers rather than a single figure.
+  trigger: >-
+    An investment, entry or resourcing decision depends on how large an
+    opportunity is.
+  inputs:
+    - name: market_definition
+      required: true
+      type: string
+      description: Buyer, job and budget line. Sizing a category rather than a market produces meaningless numbers.
+    - name: decision_use
+      required: true
+      type: string
+      description: What the number will justify, which sets the required precision.
+    - name: geography
+      required: true
+      type: string
+      description: Geographic scope, since penetration and pricing rarely transfer.
+    - name: known_anchors
+      required: false
+      type: object[]
+      description: Verified data points such as customer counts, prices or spend, which constrain the model.
+  prerequisites:
+    - source-credibility-assessment
+  tools:
+    - web-search
+    - page-fetch
+    - dataframe-runtime
+    - spreadsheet
+    - llm-inference
+  dependencies:
+    - Access to at least one verifiable anchor; a model with no anchors is arithmetic, not sizing
+  procedure:
+    - step: Define the market by demand
+      description: >-
+        State who buys, what job they buy for, and from which budget. Supply-side
+        definitions inflate estimates by including non-buyers.
+    - step: Build bottom up
+      description: >-
+        Construct the estimate from population, qualification rate, adoption rate
+        and price. Top-down percentages of a reported total are not defensible.
+    - step: Anchor every driver
+      description: >-
+        Attach a source and a confidence to each driver. Unanchored drivers are
+        marked as assumptions and carried into the sensitivity analysis.
+    - step: Separate total, serviceable and obtainable
+      description: >-
+        Distinguish the whole market, the part the offering can serve, and the
+        part reachable given channel and capacity within the horizon.
+    - step: Run sensitivity
+      description: >-
+        Vary each driver across its plausible range and rank drivers by their
+        effect on the result.
+    - step: Cross-check with an independent method
+      description: >-
+        Estimate again by a different route — competitor revenue, procurement
+        spend, headcount proxies — and reconcile the difference.
+    - step: Report range and drivers
+      description: >-
+        Deliver a range with the dominant driver named, not a point estimate.
+  decision_rules:
+    - condition: The estimate rests on a percentage of a published total market figure
+      action: Rebuild bottom up; top-down slicing is not defensible for a decision.
+    - condition: Two methods differ by more than a factor of two
+      action: Report the discrepancy and investigate the definitional difference before choosing.
+    - condition: One driver dominates the sensitivity
+      action: Make that driver the headline finding and recommend measuring it directly.
+    - condition: No verifiable anchor exists
+      action: Report that the market cannot be sized with available evidence rather than modelling it anyway.
+  outputs:
+    - name: size_estimate
+      type: object
+      description: Total, serviceable and obtainable figures as ranges with a stated horizon.
+    - name: model
+      type: json
+      description: Every driver, its value, its source and its confidence.
+    - name: sensitivity_ranking
+      type: json
+      description: Drivers ranked by effect on the result.
+    - name: cross_check
+      type: object
+      description: The independent estimate and the reconciliation of any difference.
+  validation:
+    - check: The estimate is built bottom up from named drivers.
+    - check: Every driver has a source or is labelled an assumption.
+    - check: A range is reported, not a point estimate.
+    - check: An independent cross-check was performed and reconciled.
+  failure_modes:
+    - failure: A large published market figure is sliced by an invented percentage.
+      mitigation: Prohibit top-down slicing; require bottom-up construction.
+    - failure: The market is defined by product category and includes non-buyers.
+      mitigation: Apply the buyer, job and budget test to the definition.
+    - failure: A precise-looking number hides a driver with an order-of-magnitude range.
+      mitigation: Report the range and name the dominant driver in the headline.
+    - failure: Obtainable market is reported as if it were reachable immediately.
+      mitigation: State the horizon and the channel constraint on the obtainable figure.
+  escalation:
+    - condition: The number will appear in fundraising or public materials.
+      action: Escalate for review of every driver and its source before release.
+    - condition: The decision requires precision the evidence cannot support.
+      action: Escalate the mismatch rather than narrowing the range artificially.
+  examples:
+    - title: Sizing compliance automation for mid-market financial firms
+      input:
+        market_definition: Compliance leads at 200-2000 person financial firms buying control automation from a risk budget
+        geography: United Kingdom
+        decision_use: Whether to build a dedicated product line
+      output:
+        size_estimate: {serviceable: 180-320m GBP, horizon: 3 years}
+        sensitivity_ranking: [Adoption rate, Average contract value, Qualified firm count]
+    - title: Sizing an internal tooling opportunity
+      input:
+        market_definition: Platform teams buying build-cache services from an infrastructure budget
+        geography: North America
+        decision_use: Resourcing a two-engineer team
+      output:
+        size_estimate: {obtainable: 4-9m USD, horizon: 2 years}
+        cross_check: Competitor revenue implies the upper half of the range
+  related_skills:
+    prerequisites: [source-credibility-assessment]
+    complementary: [market-landscape-mapping, validate-analysis-assumptions]
+    successors: [build-buy-partner-decision, pricing-strategy, scenario-planning]
+    related: [competitive-intelligence-report, risk-weighted-recommendation]
+  complexity: advanced
+  build_speed: 2
+  shareability: 3
+  maturity: beta
+  tags: [strategy, sizing, estimation, sensitivity, markets]
+  author: Agent Skills Compendium
+  license: CC-BY-4.0
+  risk_level: medium
+  required_permissions: [web.read, document.write]
+  restricted_actions: [Publishing a point estimate without its range and drivers]
+  created_at: "2025-02-12T00:00:00Z"
+  updated_at: "2025-08-04T00:00:00Z"

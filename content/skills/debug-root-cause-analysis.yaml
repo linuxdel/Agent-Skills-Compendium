@@ -1,0 +1,157 @@
+skill:
+  id: skl-debug-root-cause-analysis
+  name: Debug Root Cause Analysis
+  slug: debug-root-cause-analysis
+  version: 1.2.0
+  category: coding-engineering
+  layer: L1
+  domain: software-engineering
+  description: Find why a defect occurs by narrowing the search space with evidence, rather than by pattern-matching to a familiar cause.
+  purpose: >-
+    The expensive failure mode in debugging is a confident wrong hypothesis
+    pursued for hours. This skill enforces reproduction before theorising,
+    bisection over intuition, and a mechanism-level explanation that predicts the
+    observed behaviour exactly — including the parts that seem irrelevant.
+  trigger: >-
+    Observed behaviour differs from expected behaviour and the cause is not known.
+  inputs:
+    - name: symptom
+      required: true
+      type: string
+      description: What was observed, precisely, including error text verbatim.
+    - name: expected
+      required: true
+      type: string
+      description: What should have happened instead.
+    - name: environment
+      required: true
+      type: string
+      description: Where it occurs and where it does not — version, configuration, data, load.
+    - name: recent_changes
+      required: false
+      type: string[]
+      description: Deploys, configuration or data changes near the onset.
+  prerequisites:
+    - codebase-orientation
+  tools:
+    - code-search
+    - file-system
+    - shell
+    - test-runner
+    - version-control
+    - log-store
+    - observability
+    - llm-inference
+  dependencies:
+    - An environment where the defect can be observed
+  procedure:
+    - step: Reproduce deterministically
+      description: >-
+        Establish a reliable reproduction before forming any hypothesis. If it
+        cannot be reproduced, the work is to make it reproducible.
+    - step: Establish the boundary
+      description: >-
+        Find the smallest difference between a case that fails and one that
+        succeeds. The boundary constrains the cause more than any theory.
+    - step: Read the actual error
+      description: >-
+        Read stack traces, logs and error text literally, including the parts
+        that appear irrelevant. Skimmed errors cause misdirected searches.
+    - step: Bisect the search space
+      description: >-
+        Halve the space by evidence — through history, input, configuration or
+        code path — rather than inspecting the most suspicious component first.
+    - step: Form a mechanism-level hypothesis
+      description: >-
+        State the causal chain from trigger to symptom. A hypothesis that names
+        a component but not a mechanism cannot be tested.
+    - step: Predict and test
+      description: >-
+        Derive a prediction the hypothesis makes that the alternatives do not,
+        and test it. Confirmation without discrimination proves little.
+    - step: Explain every observation
+      description: >-
+        Check the hypothesis against all observed facts, including anomalies set
+        aside earlier. Unexplained facts usually mean a second cause.
+    - step: Separate cause from trigger
+      description: >-
+        Distinguish the latent defect from the event that exposed it, since
+        fixing only the trigger leaves the defect in place.
+  decision_rules:
+    - condition: The defect cannot be reproduced
+      action: Make reproduction the objective; do not fix speculatively against an unobservable symptom.
+    - condition: The hypothesis explains the symptom but not all observations
+      action: Reject or extend it; unexplained observations indicate an incomplete model.
+    - condition: A recent change correlates with onset
+      action: Test it as a hypothesis, but do not accept correlation as the mechanism.
+    - condition: The defect disappears under instrumentation
+      action: Treat timing, concurrency or memory ordering as the primary hypothesis class.
+    - condition: Two independent causes are found
+      action: Report both; fixing one leaves a live defect.
+  outputs:
+    - name: root_cause
+      type: document
+      description: The causal chain from trigger to symptom at mechanism level.
+    - name: reproduction
+      type: string
+      description: The deterministic steps or test that exhibits the defect.
+    - name: evidence_trail
+      type: json
+      description: Hypotheses considered, tests run, and what each eliminated.
+    - name: fix_recommendation
+      type: document
+      description: The change that addresses the cause, distinguished from the change that hides the symptom.
+  validation:
+    - check: A deterministic reproduction exists and is recorded.
+    - check: The hypothesis explains every observed fact, including anomalies.
+    - check: At least one discriminating test was run, not only a confirming one.
+    - check: Cause and trigger are distinguished in the write-up.
+  failure_modes:
+    - failure: A familiar-looking cause is assumed and hours are spent on the wrong component.
+      mitigation: Bisect by evidence before inspecting any component.
+    - failure: The trigger is fixed and the latent defect remains.
+      mitigation: Require the cause-versus-trigger distinction in the output.
+    - failure: An anomaly is dismissed as unrelated and turns out to be the mechanism.
+      mitigation: Require every observation to be explained before accepting a hypothesis.
+    - failure: The symptom is suppressed by a catch or retry and reported as fixed.
+      mitigation: Separate fix recommendation from symptom suppression explicitly.
+  escalation:
+    - condition: The defect involves data loss, corruption or a security boundary.
+      action: Escalate immediately and preserve evidence before any remediation.
+    - condition: Reproduction requires production data or production access.
+      action: Escalate rather than accessing production autonomously.
+    - condition: The cause is in a third-party dependency.
+      action: Escalate with a minimal reproduction for the upstream maintainer.
+  examples:
+    - title: Intermittent test failure in CI
+      input:
+        symptom: "AssertionError: expected 3 items, got 2 — fails roughly 1 in 12 runs"
+        expected: Deterministic pass
+        environment: CI only, never locally
+      output:
+        root_cause: Test relies on filesystem ordering; CI runner returns a different order
+        cause_vs_trigger: Cause is the ordering assumption; trigger is the runner change
+    - title: Latency spike after a deploy
+      input:
+        symptom: p99 latency rose from 120ms to 4s within 10 minutes of deploy
+        recent_changes: [New caching layer, Dependency upgrade]
+      output:
+        root_cause: Cache stampede on cold start; single-flight guard absent
+        evidence_trail: [Dependency upgrade eliminated by reverting it in staging with symptom persisting]
+  related_skills:
+    prerequisites: [codebase-orientation]
+    complementary: [test-suite-authoring, production-incident-diagnosis]
+    successors: [feature-implementation, code-review]
+    related: [metric-anomaly-diagnosis, security-alert-investigation]
+  complexity: advanced
+  build_speed: 2
+  shareability: 3
+  maturity: production
+  tags: [debugging, root-cause, engineering, reproduction, hypothesis]
+  author: Agent Skills Compendium
+  license: CC-BY-4.0
+  risk_level: medium
+  required_permissions: [repo.read, shell.execute, logs.read]
+  restricted_actions: [Accessing production systems without approval, Modifying production data to test a hypothesis]
+  created_at: "2025-01-10T00:00:00Z"
+  updated_at: "2025-08-26T00:00:00Z"

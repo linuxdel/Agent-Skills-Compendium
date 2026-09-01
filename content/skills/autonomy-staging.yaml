@@ -1,0 +1,148 @@
+skill:
+  id: skl-autonomy-staging
+  name: Autonomy Staging
+  slug: autonomy-staging
+  version: 1.0.0
+  category: agent-deployment
+  layer: L5
+  domain: null
+  description: Increase an agent's autonomy in stages, each gated on measured evidence rather than on elapsed time or confidence.
+  purpose: >-
+    Agents are typically deployed at the autonomy their designers hoped for and
+    pulled back after an incident. This skill defines a progression from
+    suggest-only to fully autonomous, with quantitative entry and exit criteria
+    per stage and a defined regression path when a stage's criteria stop holding.
+  trigger: >-
+    An agent is being deployed, or an existing agent's autonomy is being
+    increased.
+  inputs:
+    - name: agent
+      required: true
+      type: string
+      description: The agent, its task, its tools and its permissions.
+    - name: action_inventory
+      required: true
+      type: string
+      description: Every action it can take, with reversibility and consequence.
+    - name: quality_evidence
+      required: true
+      type: string
+      description: Evaluation results and observed performance to date.
+    - name: risk_tolerance
+      required: true
+      type: string
+      description: What error rate and error type the operating context can absorb.
+  prerequisites:
+    - tool-permission-scoping
+    - eval-set-design
+  tools:
+    - policy-engine
+    - feature-flags
+    - observability
+    - audit-log
+    - human-review
+  dependencies:
+    - Telemetry that can measure agent decision quality, not only completion
+  procedure:
+    - step: Classify actions by consequence and reversibility
+      description: >-
+        Sort every action into reversible-low, reversible-high, and irreversible.
+        Autonomy is granted per class, not to the agent as a whole.
+    - step: Define the stage ladder
+      description: >-
+        Specify stages — suggest only, act with pre-approval, act with post-review,
+        act with sampling, autonomous within limits — per action class.
+    - step: Set quantitative entry criteria
+      description: >-
+        Define what must be measured, over what volume and period, to enter each
+        stage. Time served is not a criterion.
+    - step: Set exit and regression criteria
+      description: >-
+        Define what performance would return the agent to the previous stage, and
+        automate the regression where possible.
+    - step: Instrument the decision, not just the outcome
+      description: >-
+        Measure whether the agent's decisions were correct, since completion
+        rates hide wrong-but-completed work.
+    - step: Keep human capability alive
+      description: >-
+        Ensure reviewers retain enough context and practice to intervene
+        competently; automation removes the skill it depends on.
+    - step: Stage per action class independently
+      description: >-
+        Allow high autonomy on reversible actions while holding irreversible ones
+        at a lower stage indefinitely.
+  decision_rules:
+    - condition: An action is irreversible and consequential
+      action: Cap it at pre-approval regardless of measured performance.
+    - condition: Entry criteria are met on volume but not on the tail
+      action: Do not advance; tail failures are what autonomy exposes.
+    - condition: Regression criteria are met
+      action: Return to the previous stage immediately and automatically.
+    - condition: The agent's environment changes materially
+      action: Re-establish entry criteria; evidence does not transfer across environments.
+    - condition: Reviewers are approving without examining
+      action: Treat the stage as effectively autonomous and re-evaluate accordingly.
+  outputs:
+    - name: staging_plan
+      type: document
+      description: Stage ladder per action class with entry, exit and regression criteria.
+    - name: current_stage
+      type: json
+      description: The agent's stage per action class with the evidence supporting it.
+    - name: regression_triggers
+      type: json
+      description: Automated conditions that reduce autonomy.
+    - name: review_health
+      type: object
+      description: Whether human review remains substantive rather than nominal.
+  validation:
+    - check: Every action class has its own stage and criteria.
+    - check: Entry criteria are quantitative and measured on real volume including the tail.
+    - check: Regression triggers exist and are automated where possible.
+    - check: Irreversible consequential actions are not autonomous.
+    - check: Review substantiveness is measured, not assumed.
+  failure_modes:
+    - failure: Autonomy is granted wholesale and one irreversible action causes harm.
+      mitigation: Stage per action class by reversibility and consequence.
+    - failure: Reviewers rubber-stamp and the stage is autonomous in practice.
+      mitigation: Measure review substantiveness and treat nominal review as autonomy.
+    - failure: Performance degrades gradually and nobody reduces autonomy.
+      mitigation: Automate regression triggers rather than relying on judgement.
+    - failure: Humans lose the context to intervene after months of automation.
+      mitigation: Preserve human capability deliberately through sampling and rotation.
+  escalation:
+    - condition: An agent takes an action outside its current stage.
+      action: Halt the agent and escalate; this is a control failure, not a quality issue.
+    - condition: A stage advance is requested without meeting criteria.
+      action: Escalate the request to the risk owner rather than advancing on judgement.
+  examples:
+    - title: Staging a code-change agent
+      input:
+        risk_tolerance: No unreviewed changes to production paths
+      output:
+        current_stage: {branch_changes: autonomous, pull_requests: post-review, merges: pre-approval, deploys: not granted}
+        regression_triggers: [Reverted-change rate above 5 percent over 20 changes]
+    - title: Staging a customer-response agent
+      input:
+        action_inventory: Draft reply, send reply, issue refund, close ticket
+      output:
+        current_stage: {draft: autonomous, send: sampling review, refund: pre-approval}
+        review_health: 22 percent of sampled sends examined substantively
+  related_skills:
+    prerequisites: [tool-permission-scoping, eval-set-design]
+    complementary: [agent-telemetry-instrumentation, agent-rollback, dry-run-rehearsal]
+    successors: [agent-telemetry-instrumentation, agent-rollback]
+    related: [release-readiness-check, sim-to-real-validation]
+  complexity: advanced
+  build_speed: 2
+  shareability: 3
+  maturity: beta
+  tags: [deployment, autonomy, staging, governance, agents]
+  author: Agent Skills Compendium
+  license: CC-BY-4.0
+  risk_level: high
+  required_permissions: [policy.write, flags.write]
+  restricted_actions: [Advancing a stage without meeting criteria, Granting autonomy over irreversible consequential actions]
+  created_at: "2025-04-17T00:00:00Z"
+  updated_at: "2025-08-30T00:00:00Z"

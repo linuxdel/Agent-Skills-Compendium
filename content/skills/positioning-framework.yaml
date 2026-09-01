@@ -1,0 +1,144 @@
+skill:
+  id: skl-positioning-framework
+  name: Positioning Framework
+  slug: positioning-framework
+  version: 1.0.0
+  category: business-strategy
+  layer: L1
+  domain: null
+  description: Determine what a product is for, who it is for, and what it is better than — as claims that competitors could not truthfully make.
+  purpose: >-
+    Positioning fails when its claims are true of everyone in the category. This
+    skill derives position from the alternatives a buyer actually considers,
+    tests every claim for exclusivity, and grounds differentiation in capability
+    evidence rather than aspiration.
+  trigger: >-
+    A product is being launched, is losing deals for unclear reasons, or its
+    messaging no longer matches who buys it.
+  inputs:
+    - name: product
+      required: true
+      type: string
+      description: What the product does, in capability terms.
+    - name: current_customers
+      required: true
+      type: string
+      description: Who actually buys and what they replaced, which constrains realistic positioning.
+    - name: alternatives
+      required: true
+      type: string[]
+      description: What buyers consider instead, including doing nothing and building internally.
+    - name: capability_evidence
+      required: false
+      type: string[]
+      description: Demonstrable capabilities that could support a differentiation claim.
+  prerequisites: []
+  tools:
+    - llm-inference
+    - web-search
+    - document-generator
+  dependencies:
+    - Access to real customer and win-loss evidence, not only internal belief
+  procedure:
+    - step: Establish the competitive alternative
+      description: >-
+        Determine what buyers would use if this product did not exist. Position
+        is defined relative to that alternative, not to the category.
+    - step: Identify unique capabilities
+      description: >-
+        List capabilities the alternatives lack, and require evidence for each.
+        Aspirational capabilities are excluded.
+    - step: Translate capabilities into value
+      description: >-
+        Convert each capability into the outcome a buyer cares about, and drop
+        capabilities that do not map to an outcome anyone pays for.
+    - step: Identify who values it most
+      description: >-
+        Segment by which buyers get disproportionate value, rather than by
+        firmographics that do not predict fit.
+    - step: Choose the market frame
+      description: >-
+        Decide the category context in which the value is obvious. The wrong
+        frame makes strong differentiation look irrelevant.
+    - step: Test claims for exclusivity
+      description: >-
+        Check each claim against every alternative. If a competitor could say it
+        truthfully, it is a table stake and is removed from the position.
+    - step: State what the product is not for
+      description: >-
+        Name the segments and use cases the position deliberately excludes, since
+        a position that excludes nothing differentiates nothing.
+  decision_rules:
+    - condition: A claim is true of every alternative
+      action: Remove it from the position and record it as a table stake.
+    - condition: The best-fit segment is not the current largest segment
+      action: Present the trade-off explicitly rather than positioning for both.
+    - condition: A differentiator has no capability evidence
+      action: Exclude it and record what evidence would be needed.
+    - condition: The most obvious alternative is building internally
+      action: Position against the internal build's real cost, not against vendors.
+  outputs:
+    - name: positioning_statement
+      type: document
+      description: Competitive alternative, unique capabilities, value, best-fit segment, market frame.
+    - name: claim_test
+      type: json
+      description: Each claim with the alternatives it survives and the evidence supporting it.
+    - name: not_for
+      type: string[]
+      description: Segments and use cases deliberately excluded.
+    - name: table_stakes
+      type: string[]
+      description: Claims removed because competitors could make them truthfully.
+  validation:
+    - check: Every claim in the position survives the exclusivity test against all listed alternatives.
+    - check: The competitive alternative includes doing nothing and building internally.
+    - check: Each differentiator maps to a buyer outcome and to capability evidence.
+    - check: The not-for list is non-empty.
+  failure_modes:
+    - failure: The position describes the category rather than the product.
+      mitigation: Enforce the exclusivity test on every claim.
+    - failure: Positioning is aimed at the largest segment rather than the best-fit one.
+      mitigation: Segment by disproportionate value and surface the trade-off.
+    - failure: Features are listed as differentiation without a buyer outcome.
+      mitigation: Require the capability-to-value translation step.
+    - failure: The frame is inherited from competitors and makes real advantages invisible.
+      mitigation: Choose the frame deliberately after identifying the value.
+  escalation:
+    - condition: Positioning implies capabilities the product does not have.
+      action: Stop and escalate; shipping an unsupported claim is a legal and trust risk.
+    - condition: The best-fit segment conflicts with the current revenue base.
+      action: Escalate the strategic trade-off to leadership rather than resolving it in messaging.
+  examples:
+    - title: Repositioning a developer tool losing to internal builds
+      input:
+        product: Build cache and remote execution service
+        alternatives: [Internal build team, Open-source cache, Doing nothing]
+      output:
+        competitive_alternative: Internal platform team maintaining an open-source cache
+        differentiator: Cross-language cache correctness guarantees with an audit trail
+        not_for: [Single-language teams under 20 engineers]
+    - title: Positioning a compliance product
+      input:
+        product: Continuous control monitoring
+        alternatives: [Annual audit consultants, Spreadsheets, GRC suites]
+      output:
+        table_stakes: [Evidence collection, Framework mapping]
+        differentiator: Control failures detected within a day rather than at audit
+  related_skills:
+    prerequisites: []
+    complementary: [market-landscape-mapping, competitive-intelligence-report]
+    successors: [messaging-framework, pricing-strategy]
+    related: [market-sizing, executive-brief]
+  complexity: advanced
+  build_speed: 2
+  shareability: 3
+  maturity: beta
+  tags: [strategy, positioning, differentiation, segmentation, messaging]
+  author: Agent Skills Compendium
+  license: CC-BY-4.0
+  risk_level: medium
+  required_permissions: [document.write]
+  restricted_actions: [Claiming capabilities without evidence]
+  created_at: "2025-02-16T00:00:00Z"
+  updated_at: "2025-07-28T00:00:00Z"

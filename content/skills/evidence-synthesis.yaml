@@ -1,0 +1,141 @@
+skill:
+  id: skl-evidence-synthesis
+  name: Evidence Synthesis
+  slug: evidence-synthesis
+  version: 1.1.0
+  category: research-intelligence
+  layer: L1
+  domain: null
+  description: Reconcile a body of conflicting sources into a single position that states what is established, what is contested, and what remains unknown.
+  purpose: >-
+    Summarisation averages sources; synthesis adjudicates between them. This
+    skill produces a position with a defended structure — agreements, real
+    disagreements, apparent disagreements caused by differing definitions, and
+    genuine unknowns — so a reader can act without re-reading the corpus.
+  trigger: >-
+    Multiple sources bear on one question and a single defensible position is
+    needed, particularly when the sources disagree.
+  inputs:
+    - name: question
+      required: true
+      type: string
+      description: The single question the synthesis must answer. Multiple questions require multiple runs.
+    - name: sources
+      required: true
+      type: object[]
+      description: Source records with content, origin, date and credibility verdict.
+    - name: decision_stakes
+      required: false
+      type: string
+      description: What the answer will be used for, which sets the evidentiary bar.
+  prerequisites:
+    - source-credibility-assessment
+  tools:
+    - llm-inference
+    - document-parser
+    - embedding-index
+    - document-generator
+  dependencies:
+    - Credibility verdicts already assigned to each source
+  procedure:
+    - step: Normalise claims
+      description: >-
+        Extract each source's claim on the question in a common form, preserving
+        the source's own qualifiers and scope conditions.
+    - step: Separate definitional from substantive disagreement
+      description: >-
+        Check whether conflicting sources are measuring the same thing. Most
+        apparent conflict is definitional and dissolves once terms are aligned.
+    - step: Weight by credibility and relevance
+      description: >-
+        Weight each claim by its credibility verdict and by how directly it
+        addresses the question. Never weight by how often a claim recurs.
+    - step: Construct the position
+      description: >-
+        State what the evidence establishes, at what confidence, and under what
+        scope conditions.
+    - step: Preserve the dissent
+      description: >-
+        Record the strongest contrary evidence and why it did not carry, rather
+        than dropping it. A synthesis that hides its dissent cannot be audited.
+    - step: Name the unknowns
+      description: >-
+        State what the corpus cannot answer and what evidence would answer it.
+    - step: Emit position and evidence map
+      description: >-
+        Deliver the position with a map from every conclusion back to the
+        supporting and contrary sources.
+  decision_rules:
+    - condition: Sources disagree because they define the subject differently
+      action: Report a definitional split rather than a factual dispute, and answer under each definition.
+    - condition: A high-credibility source is contradicted by many low-credibility ones
+      action: Follow the high-credibility source and report the volume of contrary low-quality material as a signal about the discourse.
+    - condition: The evidence does not reach the bar set by decision stakes
+      action: Return no-conclusion with the gap, rather than a hedged position.
+    - condition: All sources trace to one origin
+      action: Report a single-source position and cap confidence at low.
+  outputs:
+    - name: position
+      type: document
+      description: The answer, its confidence, and its scope conditions.
+    - name: evidence_map
+      type: json
+      description: Each conclusion mapped to supporting and contrary sources with weights.
+    - name: contested_points
+      type: json
+      description: Genuine disagreements, their nature, and what would resolve them.
+    - name: unknowns
+      type: string[]
+      description: Questions the corpus cannot answer, with the evidence that would.
+  validation:
+    - check: Every conclusion in the position resolves to entries in the evidence map.
+    - check: Contrary evidence is present and its dismissal is reasoned.
+    - check: Definitional and substantive disagreements are distinguished.
+    - check: Confidence is justified by source weight, not by source count.
+  failure_modes:
+    - failure: Majority view is reported as truth because it was most common.
+      mitigation: Weight by credibility and independence; deduplicate by origin before weighting.
+    - failure: Real disagreement is smoothed into a vague consensus statement.
+      mitigation: Require the contested-points output to be populated whenever conflict exists.
+    - failure: Definitional confusion is presented as empirical dispute.
+      mitigation: Run the definitional check before any weighting.
+    - failure: Confidence is inflated by many restatements of one study.
+      mitigation: Collapse sources by origin chain before counting.
+  escalation:
+    - condition: The evidence supports two incompatible positions with equal weight.
+      action: Present both with their conditions and escalate the decision rather than choosing.
+    - condition: Synthesis concerns clinical, legal or safety-critical guidance.
+      action: Escalate to a qualified human reviewer before the output is used.
+  examples:
+    - title: Reconciling conflicting reports of a product's reliability
+      input:
+        question: Has Vendor Y's uptime materially degraded in the last two quarters?
+        decision_stakes: Contract renewal worth seven figures
+      output:
+        position: Degradation is real but confined to one region and one service tier
+        contested_points: [Whether the region is in scope for our contract]
+        unknowns: [Root cause; vendor has not published post-incident reviews]
+    - title: Synthesising research on an engineering practice
+      input:
+        question: Does trunk-based development reduce change failure rate?
+        decision_stakes: Internal process change
+      output:
+        position: Supported, but the effect is confounded with deployment automation maturity
+        contested_points: [Whether the effect survives controlling for automation]
+  related_skills:
+    prerequisites: [source-credibility-assessment]
+    complementary: [competitive-intelligence-report, knowledge-synthesis-brief, statistical-significance-test]
+    successors: [executive-brief, situation-assessment]
+    related: [structured-critique, market-landscape-mapping]
+  complexity: advanced
+  build_speed: 2
+  shareability: 3
+  maturity: production
+  tags: [synthesis, reasoning, evidence, conflict, epistemics]
+  author: Agent Skills Compendium
+  license: CC-BY-4.0
+  risk_level: medium
+  required_permissions: [document.write]
+  restricted_actions: [Presenting a synthesis as consensus when material dissent exists]
+  created_at: "2025-01-22T00:00:00Z"
+  updated_at: "2025-08-19T00:00:00Z"

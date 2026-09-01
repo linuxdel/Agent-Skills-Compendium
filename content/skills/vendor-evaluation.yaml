@@ -1,0 +1,148 @@
+skill:
+  id: skl-vendor-evaluation
+  name: Vendor Evaluation
+  slug: vendor-evaluation
+  version: 1.0.0
+  category: finance-operations
+  layer: L4
+  domain: procurement
+  description: Compare vendors against weighted requirements derived from actual use, including exit cost and dependency risk.
+  purpose: >-
+    Vendor selection is usually decided by demo quality and by the requirement
+    list the leading vendor helped write. This skill fixes weighted requirements
+    before vendor contact, tests them against real workloads, and scores exit
+    cost as a first-class criterion.
+  trigger: >-
+    A vendor must be selected or a renewal decision must be justified.
+  inputs:
+    - name: need
+      required: true
+      type: string
+      description: The capability required, in outcome terms.
+    - name: usage_profile
+      required: true
+      type: string
+      description: Real volumes, patterns and integration points the vendor must handle.
+    - name: constraints
+      required: true
+      type: string[]
+      description: Budget, security, regulatory, regional and timeline constraints.
+    - name: incumbent
+      required: false
+      type: string
+      description: The current solution, whose switching cost is part of the comparison.
+  prerequisites: []
+  tools:
+    - spreadsheet
+    - web-search
+    - http-client
+    - document-parser
+    - llm-inference
+  dependencies:
+    - Ability to test against representative workloads, not vendor-supplied demos
+  procedure:
+    - step: Derive weighted requirements before contact
+      description: >-
+        Write and weight requirements from actual usage before speaking to
+        vendors, so the criteria are not shaped by the loudest sales process.
+    - step: Separate must-have from differentiating
+      description: >-
+        Distinguish disqualifying requirements from those that discriminate
+        between qualified vendors.
+    - step: Test against real workloads
+      description: >-
+        Evaluate with representative data and volumes rather than curated demos.
+        Demos test the vendor's preparation, not the product.
+    - step: Score security and compliance posture
+      description: >-
+        Assess against the organisation's actual obligations, including
+        subprocessors and data residency.
+    - step: Model total cost including exit
+      description: >-
+        Include implementation, integration, training, escalation clauses and the
+        cost of leaving.
+    - step: Assess vendor viability and dependency
+      description: >-
+        Consider concentration risk, roadmap alignment, support model and what
+        happens if the vendor is acquired.
+    - step: Score and record the decision
+      description: >-
+        Produce a weighted scorecard with evidence per score, and record the
+        decision with its reversal conditions.
+  decision_rules:
+    - condition: Requirements were written after vendor conversations
+      action: Rewrite them from usage evidence; vendor-shaped requirements predetermine the outcome.
+    - condition: A vendor fails a must-have requirement
+      action: Disqualify rather than weighting it down.
+    - condition: Exit cost is unquantified
+      action: Treat exit cost as high until proven otherwise.
+    - condition: Evaluation relied only on demos
+      action: Require a workload test before recommending.
+    - condition: The vendor would hold critical data
+      action: Require data portability terms as a condition of selection.
+  outputs:
+    - name: scorecard
+      type: json
+      description: Weighted scores per vendor per requirement with evidence.
+    - name: recommendation
+      type: document
+      description: Selected vendor, trade-offs accepted, and conditions of selection.
+    - name: cost_model
+      type: json
+      description: Total cost including implementation, escalation and exit.
+    - name: risk_register
+      type: json
+      description: Dependency, viability, security and concentration risks with mitigations.
+  validation:
+    - check: Requirements and weights were fixed before vendor contact.
+    - check: Every score cites evidence, not vendor assertion.
+    - check: A workload test was performed for shortlisted vendors.
+    - check: Exit cost is quantified and included in the comparison.
+  failure_modes:
+    - failure: Requirements are written from a vendor's feature list and only that vendor qualifies.
+      mitigation: Derive requirements from usage before any vendor contact.
+    - failure: A polished demo outweighs a workload failure.
+      mitigation: Score only on evidence from representative tests.
+    - failure: Exit cost surfaces at renewal and eliminates negotiating leverage.
+      mitigation: Quantify exit cost and require portability terms.
+    - failure: Security review happens after selection and blocks the choice.
+      mitigation: Score security posture during evaluation, not after.
+  escalation:
+    - condition: The vendor would process regulated or personal data.
+      action: Route to privacy and security review before shortlisting.
+    - condition: Spend exceeds the requester's authority.
+      action: Escalate to the approving authority with the scorecard.
+    - condition: Only one vendor qualifies.
+      action: Escalate the single-source risk rather than proceeding silently.
+  examples:
+    - title: Selecting a document extraction vendor
+      input:
+        usage_profile: 40k mixed-quality PDFs monthly, 12 field types
+        constraints: [EU data residency, 30-day implementation]
+      output:
+        scorecard: Vendor B leads on workload accuracy; Vendor A leads on price
+        recommendation: Vendor B with a portability clause and a 12-month term
+    - title: Renewal evaluation for an incumbent
+      input:
+        need: Log retention and search
+        incumbent: Current vendor at 340k annually
+      output:
+        cost_model: {switch_cost: 90k, annual_saving: 120k, payback: 9 months}
+        risk_register: [Query language rewrite required across 60 dashboards]
+  related_skills:
+    prerequisites: []
+    complementary: [build-buy-partner-decision, technical-due-diligence]
+    successors: [risk-weighted-recommendation, control-evidence-collection]
+    related: [dependency-upgrade, threat-model-construction]
+  complexity: intermediate
+  build_speed: 2
+  shareability: 2
+  maturity: beta
+  tags: [procurement, vendors, evaluation, tco, risk]
+  author: Agent Skills Compendium
+  license: CC-BY-4.0
+  risk_level: medium
+  required_permissions: [document.write, web.read]
+  restricted_actions: [Signing agreements, Sharing internal data with vendors without approval]
+  created_at: "2025-03-10T00:00:00Z"
+  updated_at: "2025-07-08T00:00:00Z"

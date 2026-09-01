@@ -1,0 +1,26 @@
+# --- dependencies ---
+node_modules
+
+# --- build output ---
+.next
+out
+*.tsbuildinfo
+next-env.d.ts
+
+# --- secrets and credentials ---
+# Never commit environment files, private keys or credentials.
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.p12
+*.pfx
+id_rsa
+id_ed25519
+*.crt
+
+# --- local / editor ---
+.DS_Store
+.vscode/
+.idea/

@@ -1,0 +1,152 @@
+skill:
+  id: skl-task-decomposition-delegation
+  name: Task Decomposition & Delegation
+  slug: task-decomposition-delegation
+  version: 1.1.0
+  category: multi-agent-systems
+  layer: L5
+  domain: null
+  description: Split work across sub-agents only where parallelism pays, with interfaces precise enough that results compose.
+  purpose: >-
+    Delegation is often applied because it is available rather than because it
+    helps: each sub-agent starts cold, re-derives context, and returns work that
+    does not fit together. This skill decomposes along genuine independence
+    boundaries, specifies each sub-task's contract, and keeps integration cost
+    explicitly in the accounting.
+  trigger: >-
+    A task is large enough that a single agent would exceed its context or its
+    time budget, and parts of it are genuinely independent.
+  inputs:
+    - name: task
+      required: true
+      type: string
+      description: The overall objective and its acceptance criteria.
+    - name: context_available
+      required: true
+      type: string
+      description: What the orchestrator already knows, which sub-agents would otherwise re-derive.
+    - name: agent_capabilities
+      required: true
+      type: string
+      description: What sub-agents are available, their tools and their limits.
+    - name: budget
+      required: false
+      type: string
+      description: Time, token or cost ceiling, which constrains fan-out.
+  prerequisites: []
+  tools:
+    - sub-agent
+    - queue
+    - llm-inference
+    - agent-memory
+    - audit-log
+  dependencies:
+    - A sub-agent runtime with isolated context and result collection
+  procedure:
+    - step: Test whether decomposition helps at all
+      description: >-
+        Compare doing the work directly against decomposing it, including the
+        cost of context transfer and integration. Most tasks fail this test.
+    - step: Find genuine independence boundaries
+      description: >-
+        Split where sub-tasks do not need each other's intermediate results.
+        Splitting coupled work produces inconsistent outputs that must be redone.
+    - step: Specify each sub-task as a contract
+      description: >-
+        Define inputs, expected output shape, acceptance criteria and scope
+        boundary per sub-task, so results compose without negotiation.
+    - step: Transfer context deliberately
+      description: >-
+        Include the context each sub-agent needs; a cold sub-agent re-derives
+        expensively and often differently.
+    - step: Assign the right capability
+      description: >-
+        Match sub-task to agent capability and tools; a broad agent on a narrow
+        task wastes budget and a narrow agent on a broad task fails.
+    - step: Define the integration step
+      description: >-
+        Specify how results combine, who resolves conflicts and what happens when
+        one sub-task fails.
+    - step: Set budgets and stop conditions
+      description: >-
+        Give each sub-task a ceiling and a stop condition, so one failing branch
+        cannot consume the whole budget.
+    - step: Verify composed output against the original goal
+      description: >-
+        Check the integrated result against the acceptance criteria, not against
+        the sum of the sub-results.
+  decision_rules:
+    - condition: Sub-tasks need each other's intermediate results
+      action: Do not parallelise them; sequence them or keep them in one agent.
+    - condition: The context transfer cost exceeds the parallel saving
+      action: Do the work directly.
+    - condition: A sub-task's output shape is unspecified
+      action: Specify it before dispatch; unspecified outputs do not compose.
+    - condition: A sub-agent exceeds its budget
+      action: Stop that branch and integrate what exists rather than extending the ceiling.
+    - condition: Two sub-agents would modify the same resource
+      action: Serialise the access or assign it to a single owner.
+  outputs:
+    - name: decomposition_plan
+      type: json
+      description: Sub-tasks with contracts, assigned capability, budget and dependencies.
+    - name: integration_spec
+      type: document
+      description: How results combine, conflict resolution and partial-failure handling.
+    - name: dispatch_record
+      type: json
+      description: What was delegated, to whom, with what context and what budget.
+    - name: composed_result
+      type: object
+      description: The integrated output verified against the original acceptance criteria.
+  validation:
+    - check: Decomposition was tested against doing the work directly.
+    - check: Every sub-task has a defined output shape and acceptance criteria.
+    - check: No two parallel sub-tasks depend on each other's intermediate results.
+    - check: The composed result is verified against the original goal, not the sum of parts.
+  failure_modes:
+    - failure: Sub-agents re-derive context that the orchestrator already had.
+      mitigation: Transfer context explicitly in each sub-task contract.
+    - failure: Parallel results contradict each other and integration becomes a rewrite.
+      mitigation: Split only at genuine independence boundaries.
+    - failure: Fan-out is used for a task one agent could do faster.
+      mitigation: Apply the decomposition-benefit test first.
+    - failure: One failing branch consumes the entire budget.
+      mitigation: Set per-branch ceilings and stop conditions.
+    - failure: Two sub-agents write to the same file and one overwrites the other.
+      mitigation: Assign exclusive ownership of mutable resources.
+  escalation:
+    - condition: A sub-task requires a permission the orchestrator does not hold.
+      action: Escalate rather than delegating to an agent with broader permissions.
+    - condition: Sub-results conflict and no rule resolves the conflict.
+      action: Escalate to a human with both results and the conflict stated.
+  examples:
+    - title: Decomposing a multi-source research task
+      input:
+        task: Assess three vendors across security, cost and integration fit
+        budget: 20 minutes wall clock
+      output:
+        decomposition_plan: 3 parallel vendor investigations with identical output contracts
+        integration_spec: Scorecard merge with orchestrator-held weighting
+    - title: Rejecting an unnecessary decomposition
+      input:
+        task: Fix a failing test in a single module
+      output:
+        decomposition_plan: None — context transfer exceeds any parallel saving
+  related_skills:
+    prerequisites: []
+    complementary: [agent-role-design, multi-agent-conflict-resolution, tool-permission-scoping]
+    successors: [multi-agent-conflict-resolution, agent-telemetry-instrumentation]
+    related: [automation-opportunity-assessment, autonomy-staging]
+  complexity: advanced
+  build_speed: 2
+  shareability: 3
+  maturity: beta
+  tags: [multi-agent, delegation, decomposition, orchestration, budget]
+  author: Agent Skills Compendium
+  license: CC-BY-4.0
+  risk_level: medium
+  required_permissions: [agent.spawn]
+  restricted_actions: [Delegating with broader permissions than the orchestrator holds, Unbounded fan-out]
+  created_at: "2025-02-21T00:00:00Z"
+  updated_at: "2025-08-28T00:00:00Z"

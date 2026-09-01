@@ -1,0 +1,150 @@
+skill:
+  id: skl-eval-set-design
+  name: Eval Set Design
+  slug: eval-set-design
+  version: 1.1.0
+  category: agent-evaluation
+  layer: L5
+  domain: null
+  description: Build an evaluation set that discriminates between systems on the dimensions that matter, and that cannot be passed by memorisation.
+  purpose: >-
+    Most eval sets are drawn from the easy middle of the distribution, so every
+    system scores well and the scores predict nothing about production. This skill
+    derives cases from real failure modes and usage distribution, includes cases
+    the current system fails, and holds out data that never enters development.
+  trigger: >-
+    An agent or model system needs a measurable quality bar, or existing scores no
+    longer track observed quality.
+  inputs:
+    - name: system_purpose
+      required: true
+      type: string
+      description: What the system is for and what counts as success.
+    - name: usage_distribution
+      required: true
+      type: string
+      description: What real inputs look like, including their tail.
+    - name: known_failures
+      required: true
+      type: string[]
+      description: Observed failure modes, which are the highest-value cases.
+    - name: quality_dimensions
+      required: false
+      type: string[]
+      description: Dimensions to measure separately, such as correctness, safety, calibration and cost.
+  prerequisites: []
+  tools:
+    - eval-harness
+    - dataframe-runtime
+    - llm-inference
+    - file-system
+    - statistics-engine
+  dependencies:
+    - Access to representative production inputs, appropriately anonymised
+  procedure:
+    - step: Define success per dimension
+      description: >-
+        Specify what correct means for each dimension separately. A single
+        aggregate score conceals trade-offs between them.
+    - step: Sample from the real distribution
+      description: >-
+        Draw cases proportional to real usage, including the tail, rather than
+        from what is easy to construct.
+    - step: Include known failures
+      description: >-
+        Add every observed production failure. Cases the system currently fails
+        are the ones that measure progress.
+    - step: Add adversarial and boundary cases
+      description: >-
+        Include ambiguous inputs, conflicting instructions, missing information
+        and cases where the right answer is to refuse or ask.
+    - step: Hold out a set that never enters development
+      description: >-
+        Reserve cases used only for final evaluation, with access controlled, so
+        that improvement is not overfitting.
+    - step: Check discrimination
+      description: >-
+        Verify the set separates systems of different quality. A set everything
+        passes measures nothing.
+    - step: Define scoring and its reliability
+      description: >-
+        Specify how each case is scored and establish that scoring is repeatable
+        before trusting any result.
+    - step: Plan refresh
+      description: >-
+        Define how cases are added as new failures appear and how contamination
+        is detected.
+  decision_rules:
+    - condition: Every system scores above 90 percent
+      action: The set does not discriminate; add harder and tail cases.
+    - condition: A case's correct answer is contested among reviewers
+      action: Remove or clarify it; ambiguous ground truth produces meaningless scores.
+    - condition: Development has seen the holdout set
+      action: Treat the holdout as compromised and rebuild it.
+    - condition: The set contains no cases where refusal or clarification is correct
+      action: Add them; systems that never refuse fail dangerously in production.
+    - condition: Scoring is not repeatable
+      action: Fix scoring before interpreting any result.
+  outputs:
+    - name: eval_set
+      type: json
+      description: Cases with inputs, expected outcomes, dimension tags and difficulty.
+    - name: scoring_rubric
+      type: document
+      description: How each dimension is scored and what evidence supports each score.
+    - name: holdout_set
+      type: json
+      description: Reserved cases with access controls.
+    - name: discrimination_report
+      type: object
+      description: Evidence that the set separates systems of different quality.
+  validation:
+    - check: The set includes cases the current system fails.
+    - check: Ground truth is uncontested for every case.
+    - check: A holdout exists and has not been seen during development.
+    - check: Scoring repeatability has been measured.
+    - check: Cases exist where refusal or clarification is the correct behaviour.
+  failure_modes:
+    - failure: Scores are high and production quality is poor.
+      mitigation: Sample from the real distribution including the tail, and include known failures.
+    - failure: Improvement is overfitting to a set the developers optimised against.
+      mitigation: Maintain a controlled holdout.
+    - failure: Contested ground truth makes scores unstable across reviewers.
+      mitigation: Remove or clarify contested cases before use.
+    - failure: The set rewards always answering and penalises appropriate refusal.
+      mitigation: Include cases where refusal or asking is correct.
+  escalation:
+    - condition: Evaluation data contains personal or confidential material.
+      action: Escalate for anonymisation and access control before use.
+    - condition: The system is used in a safety or regulatory context.
+      action: Escalate for domain review of the rubric before results are relied on.
+  examples:
+    - title: Eval set for a support-triage agent
+      input:
+        known_failures: [Misroutes billing disputes, Over-escalates simple password resets]
+      output:
+        eval_set: 340 cases, 60 drawn from production failures
+        discrimination_report: Separates the current and prior versions by 14 points
+    - title: Eval set for a code-change agent
+      input:
+        quality_dimensions: [Correctness, Scope adherence, Test adequacy, Cost]
+      output:
+        holdout_set: 80 cases under access control
+        scoring_rubric: Per-dimension scoring with a separate cost measure
+  related_skills:
+    prerequisites: []
+    complementary: [llm-judge-calibration, failure-taxonomy, test-suite-authoring]
+    successors: [llm-judge-calibration, autonomy-staging]
+    related: [statistical-significance-test, sim-to-real-validation]
+  complexity: advanced
+  build_speed: 2
+  shareability: 3
+  maturity: beta
+  tags: [evaluation, benchmarks, holdout, discrimination, quality]
+  author: Agent Skills Compendium
+  license: CC-BY-4.0
+  risk_level: medium
+  required_permissions: [data.read, eval.write]
+  restricted_actions: [Using holdout data during development, Publishing scores from a contaminated set]
+  created_at: "2025-02-23T00:00:00Z"
+  updated_at: "2025-08-25T00:00:00Z"

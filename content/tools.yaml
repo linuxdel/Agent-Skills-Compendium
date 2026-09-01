@@ -1,0 +1,202 @@
+# Agent Skills Compendium
+# Copyright © 2026 Jerson Boyd Milan
+
+# Normalised tool registry. Skills reference tools by id; a tool is something an
+# agent can USE. A skill is something an agent knows how to ACCOMPLISH.
+tools:
+  - id: web-search
+    name: Web Search
+    kind: retrieval
+    description: Keyword and semantic search over the public web, returning ranked result sets with URLs and snippets.
+  - id: web-browser
+    name: Headless Browser
+    kind: interface
+    description: Loads, renders and navigates pages, including JavaScript-driven applications and authenticated sessions.
+  - id: page-fetch
+    name: Page Fetch & Extract
+    kind: retrieval
+    description: Retrieves a single URL and extracts readable content, metadata and links without full browser rendering.
+  - id: document-parser
+    name: Document Parser
+    kind: retrieval
+    description: Extracts text, tables and structure from PDF, DOCX, PPTX, HTML and scanned documents.
+  - id: file-system
+    name: File System
+    kind: storage
+    description: Reads, writes, moves and inspects files and directories in a scoped working tree.
+  - id: code-search
+    name: Code Search
+    kind: retrieval
+    description: Structural and regex search across a repository, including symbol and reference lookup.
+  - id: code-editor
+    name: Code Editor
+    kind: generation
+    description: Applies precise edits to source files with exact-match replacement and diff generation.
+  - id: shell
+    name: Shell
+    kind: control
+    description: Executes commands in a sandboxed shell and returns stdout, stderr and exit status.
+  - id: test-runner
+    name: Test Runner
+    kind: compute
+    description: Executes a project's test suite or a selected subset and reports pass, fail and coverage.
+  - id: build-system
+    name: Build System
+    kind: compute
+    description: Compiles, bundles and type-checks a project, surfacing build and type errors.
+  - id: version-control
+    name: Version Control
+    kind: control
+    description: Inspects history, diffs, branches and blame, and creates commits and branches.
+  - id: ci-system
+    name: CI System
+    kind: control
+    description: Triggers and reads continuous integration pipelines, job logs and artifact status.
+  - id: sql-client
+    name: SQL Client
+    kind: retrieval
+    description: Executes SQL against a warehouse or database and returns typed result sets.
+  - id: dataframe-runtime
+    name: Dataframe Runtime
+    kind: compute
+    description: Loads tabular data into memory for profiling, transformation and statistical computation.
+  - id: statistics-engine
+    name: Statistics Engine
+    kind: compute
+    description: Runs hypothesis tests, regressions, interval estimation and power calculations.
+  - id: chart-renderer
+    name: Chart Renderer
+    kind: generation
+    description: Produces charts and visual encodings from structured data with explicit scales and labels.
+  - id: spreadsheet
+    name: Spreadsheet
+    kind: storage
+    description: Reads and writes workbooks including formulas, named ranges and multiple sheets.
+  - id: document-generator
+    name: Document Generator
+    kind: generation
+    description: Produces formatted documents — reports, briefs, slides — from structured content.
+  - id: http-client
+    name: HTTP Client
+    kind: interface
+    description: Issues authenticated HTTP requests to arbitrary APIs and returns status, headers and body.
+  - id: mcp-client
+    name: MCP Client
+    kind: interface
+    description: Discovers and invokes tools and resources exposed by Model Context Protocol servers.
+  - id: llm-inference
+    name: LLM Inference
+    kind: compute
+    description: Calls a language model for generation, classification, extraction or judgement.
+  - id: embedding-index
+    name: Embedding Index
+    kind: retrieval
+    description: Embeds text and performs vector similarity search over a corpus.
+  - id: knowledge-graph
+    name: Knowledge Graph
+    kind: storage
+    description: Stores and queries entities and typed relationships, supporting path and neighbourhood queries.
+  - id: agent-memory
+    name: Agent Memory
+    kind: storage
+    description: Durable per-user or per-project memory with write, recall, update and expiry semantics.
+  - id: scheduler
+    name: Scheduler
+    kind: control
+    description: Schedules future or recurring executions and manages their lifecycle.
+  - id: queue
+    name: Task Queue
+    kind: control
+    description: Enqueues, claims and acknowledges units of work with retry and dead-letter handling.
+  - id: sub-agent
+    name: Sub-Agent Runtime
+    kind: control
+    description: Spawns isolated agent instances with their own context, tools and budget, and collects their results.
+  - id: crm
+    name: CRM
+    kind: storage
+    description: Reads and writes accounts, contacts, opportunities and activity history.
+  - id: email-client
+    name: Email Client
+    kind: interface
+    description: Reads, drafts and sends email, including threads, attachments and labels.
+  - id: chat-platform
+    name: Chat Platform
+    kind: interface
+    description: Reads and posts messages in team chat channels and threads.
+  - id: calendar
+    name: Calendar
+    kind: interface
+    description: Reads availability and creates, updates or cancels calendar events.
+  - id: issue-tracker
+    name: Issue Tracker
+    kind: storage
+    description: Creates, reads, links and transitions issues, epics and sprints.
+  - id: observability
+    name: Observability Platform
+    kind: retrieval
+    description: Queries metrics, traces, logs and alert history across services.
+  - id: log-store
+    name: Log Store
+    kind: retrieval
+    description: Full-text and structured search over application, system and audit logs.
+  - id: siem
+    name: SIEM
+    kind: retrieval
+    description: Correlated security event search, detection rules and alert triage surface.
+  - id: vulnerability-scanner
+    name: Vulnerability Scanner
+    kind: compute
+    description: Scans dependencies, images and infrastructure for known vulnerabilities and misconfiguration.
+  - id: secrets-manager
+    name: Secrets Manager
+    kind: storage
+    description: Issues and rotates scoped credentials without exposing raw secret material.
+  - id: cloud-api
+    name: Cloud Control Plane
+    kind: control
+    description: Reads and mutates cloud infrastructure resources through provider APIs.
+  - id: iac-engine
+    name: IaC Engine
+    kind: control
+    description: Plans and applies declarative infrastructure changes with a reviewable diff.
+  - id: deployment-system
+    name: Deployment System
+    kind: control
+    description: Promotes builds between environments and executes rollout and rollback strategies.
+  - id: feature-flags
+    name: Feature Flag Service
+    kind: control
+    description: Reads and sets flag state and targeting rules for progressive exposure.
+  - id: policy-engine
+    name: Policy Engine
+    kind: compute
+    description: Evaluates requests and configurations against machine-readable policy and returns allow, deny and reason.
+  - id: audit-log
+    name: Audit Log
+    kind: storage
+    description: Append-only record of agent decisions, tool calls and human approvals.
+  - id: eval-harness
+    name: Eval Harness
+    kind: compute
+    description: Runs a fixed case set against a target system and scores results against rubrics.
+  - id: robot-runtime
+    name: Robot Runtime
+    kind: control
+    description: Publishes commands to and reads state from a robot control stack.
+  - id: sensor-stream
+    name: Sensor Stream
+    kind: retrieval
+    description: Time-synchronised camera, depth, lidar, force and proprioceptive data.
+  - id: motion-planner
+    name: Motion Planner
+    kind: compute
+    description: Computes collision-free trajectories subject to kinematic and dynamic constraints.
+  - id: simulator
+    name: Physics Simulator
+    kind: compute
+    description: Executes a scenario in simulation and returns trajectories, contacts and outcome metrics.
+  - id: human-review
+    name: Human Review Channel
+    kind: interface
+    description: Routes a decision to a named human and blocks until approval, rejection or timeout.

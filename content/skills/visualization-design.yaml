@@ -1,0 +1,152 @@
+skill:
+  id: skl-visualization-design
+  name: Visualization Design
+  slug: visualization-design
+  version: 1.1.0
+  category: data-analysis
+  layer: L3
+  domain: null
+  description: Choose an encoding that makes the intended comparison perceptually easy, and build the chart so it cannot be misread.
+  purpose: >-
+    Charts fail by encoding the wrong comparison, not by looking bad. This skill
+    derives the encoding from the specific comparison the reader must make,
+    applies the perceptual ordering of visual channels, and removes the standard
+    distortions — truncated axes, dual scales, rainbow ramps, chartjunk.
+  trigger: >-
+    A finding must be communicated visually, or an existing chart is being
+    misread.
+  inputs:
+    - name: data
+      required: true
+      type: string
+      description: The prepared data, with its grain and units.
+    - name: comparison
+      required: true
+      type: string
+      description: The single comparison the reader must be able to make.
+    - name: medium
+      required: true
+      type: string
+      description: Where it will be seen — slide, dashboard, print, small screen — which constrains density.
+    - name: audience_expertise
+      required: false
+      type: string
+      description: Whether the audience reads charts fluently, which constrains encoding choices.
+  prerequisites:
+    - dataset-profiling
+  tools:
+    - chart-renderer
+    - dataframe-runtime
+    - llm-inference
+  dependencies:
+    - Clean data at the grain the chart will display
+  procedure:
+    - step: State the comparison in one sentence
+      description: >-
+        Name what the reader must compare. A chart supporting more than one
+        comparison usually supports none well.
+    - step: Classify the data relationship
+      description: >-
+        Identify whether it is ranking, part-to-whole, distribution, correlation,
+        change over time, or flow. The relationship determines the chart family.
+    - step: Select encodings by perceptual accuracy
+      description: >-
+        Assign the most important quantity to position, then length, then angle
+        or area, then colour. Never encode a critical quantity in hue.
+    - step: Set scales honestly
+      description: >-
+        Baseline at zero for length-encoded quantities, avoid dual axes, and
+        state any transformation directly on the axis.
+    - step: Design colour for meaning and accessibility
+      description: >-
+        Use sequential ramps for magnitude, diverging for signed deviation from a
+        meaningful midpoint, categorical only for unordered categories, and
+        verify contrast and colour-vision safety.
+    - step: Annotate the finding
+      description: >-
+        Label the point the chart exists to make directly on the chart, rather
+        than relying on the caption.
+    - step: Remove non-data ink
+      description: >-
+        Strip gridlines, borders, effects and legends that repeat information
+        already available through direct labelling.
+    - step: Test for misreading
+      description: >-
+        State the wrong conclusion a hurried reader could draw and adjust until
+        it is no longer available.
+  decision_rules:
+    - condition: The comparison is a ranking
+      action: Use sorted bars on a common baseline, not a pie or a radar chart.
+    - condition: Two series have different units
+      action: Use small multiples or indexed values rather than a dual axis.
+    - condition: The quantity is length encoded
+      action: Baseline at zero; truncation is reserved for position-encoded points with a stated axis.
+    - condition: More than seven categories need colour
+      action: Group into fewer categories or switch to direct labelling and a single hue.
+    - condition: The audience does not read charts fluently
+      action: Choose the simplest encoding that carries the comparison, even at some loss of density.
+  outputs:
+    - name: chart
+      type: image
+      description: The rendered visualisation with annotation and direct labelling.
+    - name: encoding_rationale
+      type: document
+      description: The comparison, the relationship class, and why each channel was assigned as it was.
+    - name: accessibility_report
+      type: object
+      description: Contrast ratios, colour-vision safety and non-colour redundancy.
+    - name: misreading_check
+      type: string[]
+      description: Wrong conclusions considered and how the design forecloses them.
+  validation:
+    - check: The chart supports the stated comparison without further computation by the reader.
+    - check: Length-encoded quantities baseline at zero.
+    - check: No dual axis is present.
+    - check: Colour choices pass contrast and colour-vision checks and are redundant with another channel.
+    - check: The finding is annotated on the chart itself.
+  failure_modes:
+    - failure: A truncated axis makes a small difference look decisive.
+      mitigation: Enforce the zero-baseline rule for length encodings at validation.
+    - failure: A dual axis manufactures a correlation.
+      mitigation: Prohibit dual axes; use small multiples or indexing.
+    - failure: Critical magnitude is encoded in hue and cannot be read accurately.
+      mitigation: Apply the perceptual ordering when assigning channels.
+    - failure: The chart is beautiful and the reader still cannot make the comparison.
+      mitigation: Validate against the stated comparison, not against appearance.
+  escalation:
+    - condition: The requested chart form would misrepresent the data.
+      action: Decline the form, explain the distortion, and offer an honest alternative.
+    - condition: The visualisation will be used in regulated or investor materials.
+      action: Route for review of scales, baselines and denominators before release.
+  examples:
+    - title: Regional revenue comparison for a board slide
+      input:
+        comparison: Which regions grew and which shrank year over year
+        medium: slide
+      output:
+        chart_type: Sorted diverging bars from zero
+        annotation: Two shrinking regions labelled directly
+    - title: Latency distribution for an engineering review
+      input:
+        comparison: How the tail moved after the change
+        medium: dashboard
+      output:
+        chart_type: Overlaid empirical distribution with p95 marked
+        misreading_check: [Mean improvement hiding tail regression]
+  related_skills:
+    prerequisites: [dataset-profiling]
+    complementary: [metric-definition, cohort-analysis, statistical-significance-test]
+    successors: [executive-brief, campaign-performance-readout]
+    related: [audience-adaptive-rewrite]
+  complexity: intermediate
+  build_speed: 3
+  shareability: 3
+  maturity: production
+  tags: [visualization, charts, perception, accessibility, communication]
+  author: Agent Skills Compendium
+  license: CC-BY-4.0
+  risk_level: low
+  required_permissions: [data.read]
+  restricted_actions: [Truncating a length-encoded axis, Using a dual axis to imply correlation]
+  created_at: "2025-01-30T00:00:00Z"
+  updated_at: "2025-08-16T00:00:00Z"

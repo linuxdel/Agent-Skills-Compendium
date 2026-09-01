@@ -1,0 +1,153 @@
+skill:
+  id: skl-sim-to-real-validation
+  name: Sim-to-Real Validation
+  slug: sim-to-real-validation
+  version: 1.0.0
+  category: physical-ai-robotics
+  layer: L4
+  domain: robotics
+  description: Establish how far a policy validated in simulation can be trusted on hardware, and stage its deployment accordingly.
+  purpose: >-
+    Simulation success is evidence about the simulator, not about the world. This
+    skill quantifies the reality gap on the dimensions that matter for the task,
+    tests robustness to the differences that are known, and defines a staged
+    hardware progression with abort criteria at each stage.
+  trigger: >-
+    A policy, controller or plan validated in simulation is proposed for hardware
+    execution.
+  inputs:
+    - name: policy
+      required: true
+      type: string
+      description: The controller, policy or plan to be validated.
+    - name: simulation_results
+      required: true
+      type: string
+      description: Simulation performance including failure cases and their distribution.
+    - name: hardware_platform
+      required: true
+      type: string
+      description: The physical system, including known differences from the simulated model.
+    - name: safety_constraints
+      required: true
+      type: string
+      description: Limits that must hold on hardware regardless of simulation performance.
+  prerequisites:
+    - manipulation-task-planning
+  tools:
+    - simulator
+    - robot-runtime
+    - sensor-stream
+    - dataframe-runtime
+    - human-review
+  dependencies:
+    - Hardware access under supervised conditions with a physical stop
+  procedure:
+    - step: Enumerate known reality gaps
+      description: >-
+        List where the simulator differs from hardware — contact dynamics,
+        friction, latency, sensor noise, actuator response, compliance.
+    - step: Test sensitivity to each gap
+      description: >-
+        Vary each modelled parameter in simulation and measure performance
+        degradation, to identify which gaps the policy is fragile to.
+    - step: Randomise across the plausible range
+      description: >-
+        Evaluate under domain randomisation covering the plausible parameter
+        ranges rather than the nominal model alone.
+    - step: Characterise failure modes, not just success rate
+      description: >-
+        Determine how the policy fails, since a policy that fails safely is
+        deployable at a lower success rate than one that fails destructively.
+    - step: Define the staged progression
+      description: >-
+        Specify hardware stages — reduced speed, constrained workspace,
+        supervised, then nominal — with entry and exit criteria for each.
+    - step: Define abort criteria per stage
+      description: >-
+        State the observable conditions that stop the progression and return the
+        policy to simulation.
+    - step: Measure the actual gap on hardware
+      description: >-
+        Compare predicted and observed behaviour at each stage, and update the
+        simulator from the difference.
+    - step: Issue a deployment verdict
+      description: >-
+        State the conditions under which the policy may run, with the residual
+        uncertainty named.
+  decision_rules:
+    - condition: Performance is fragile to a known reality gap
+      action: Do not proceed to hardware; improve robustness or model the gap better first.
+    - condition: The policy fails destructively rather than safely
+      action: Require a hardware-level safety mechanism independent of the policy before any stage.
+    - condition: Observed hardware behaviour diverges from prediction beyond tolerance
+      action: Abort the progression and update the simulator before continuing.
+    - condition: Simulation success comes from exploiting a simulator artifact
+      action: Reject the policy; simulator exploitation does not transfer.
+    - condition: A stage's exit criteria are not met
+      action: Do not advance the stage, regardless of schedule pressure.
+  outputs:
+    - name: gap_analysis
+      type: json
+      description: Known reality gaps with the policy's measured sensitivity to each.
+    - name: robustness_profile
+      type: json
+      description: Performance across randomised parameter ranges with failure mode characterisation.
+    - name: staging_plan
+      type: document
+      description: Hardware stages with entry, exit and abort criteria.
+    - name: deployment_verdict
+      type: document
+      description: Conditions for hardware operation and the residual uncertainty.
+  validation:
+    - check: Sensitivity was measured for every enumerated reality gap.
+    - check: Failure modes are characterised, not only success rates.
+    - check: Every hardware stage has entry, exit and abort criteria.
+    - check: Hardware observations were compared against simulation predictions.
+  failure_modes:
+    - failure: A policy that exploits a simulator artifact fails immediately on hardware.
+      mitigation: Test under randomisation and inspect for artifact exploitation.
+    - failure: High simulated success masks destructive failure modes.
+      mitigation: Characterise how it fails, not just how often.
+    - failure: Staging is skipped under schedule pressure and hardware is damaged.
+      mitigation: Enforce stage exit criteria as hard gates.
+    - failure: The simulator is never updated and every policy hits the same gap.
+      mitigation: Feed measured hardware divergence back into the model.
+  escalation:
+    - condition: Hardware behaviour diverges substantially from prediction.
+      action: Halt the progression and escalate to the responsible engineer.
+    - condition: A failure causes damage or a safety-system activation.
+      action: Stop all hardware work and escalate to the safety owner before resuming.
+    - condition: The policy would operate near humans.
+      action: Escalate for a formal safety assessment before any stage on hardware.
+  examples:
+    - title: Validating a learned grasping policy
+      input:
+        simulation_results: 94 percent success across 20k trials
+        hardware_platform: Compliant gripper with unmodelled finger deflection
+      output:
+        gap_analysis: Policy fragile to finger compliance; success drops to 61 percent under randomisation
+        deployment_verdict: Not ready; model compliance and retrain before staging
+    - title: Validating a trajectory controller
+      input:
+        policy: Model-predictive controller for a 6-axis arm
+      output:
+        staging_plan: 4 stages from 20 percent speed to nominal, with force abort at each
+        robustness_profile: Fails safely by stalling; no destructive failure observed
+  related_skills:
+    prerequisites: [manipulation-task-planning]
+    complementary: [perception-grounding, eval-set-design]
+    successors: [autonomy-staging]
+    related: [dry-run-rehearsal, release-readiness-check]
+  complexity: expert
+  build_speed: 1
+  shareability: 2
+  maturity: prototype
+  tags: [robotics, simulation, transfer, robustness, staging]
+  author: Agent Skills Compendium
+  license: CC-BY-4.0
+  risk_level: critical
+  required_permissions: [simulator.execute, robot.supervised]
+  restricted_actions: [Unsupervised hardware execution, Advancing a stage whose exit criteria are unmet, Operating near humans without a safety assessment]
+  created_at: "2025-03-26T00:00:00Z"
+  updated_at: "2025-07-30T00:00:00Z"

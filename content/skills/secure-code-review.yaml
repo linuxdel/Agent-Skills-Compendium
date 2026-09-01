@@ -1,0 +1,153 @@
+skill:
+  id: skl-secure-code-review
+  name: Secure Code Review
+  slug: secure-code-review
+  version: 1.0.0
+  category: cybersecurity
+  layer: L4
+  domain: security
+  description: Review code for security defects by tracing untrusted input to dangerous sinks and checking authorisation at every new path.
+  purpose: >-
+    General code review finds correctness defects; security defects hide in the
+    paths nobody exercises. This skill traces data flow from every untrusted
+    source to every dangerous sink, checks authorisation on each new entry point,
+    and evaluates secret and crypto handling against known-correct patterns.
+  trigger: >-
+    Code touches authentication, authorisation, untrusted input, secrets,
+    cryptography, file handling, deserialisation or a new external interface.
+  inputs:
+    - name: diff
+      required: true
+      type: string
+      description: The change under review, with surrounding context.
+    - name: trust_context
+      required: true
+      type: string
+      description: Which inputs are untrusted and which callers are authenticated.
+    - name: data_sensitivity
+      required: true
+      type: string
+      description: What data this code can reach, which determines the consequence of a defect.
+    - name: threat_model
+      required: false
+      type: string
+      description: Existing threat model for the component, if one exists.
+  prerequisites:
+    - codebase-orientation
+  tools:
+    - code-search
+    - file-system
+    - vulnerability-scanner
+    - llm-inference
+    - version-control
+  dependencies:
+    - Repository access wide enough to trace call paths beyond the diff
+  procedure:
+    - step: Identify untrusted sources
+      description: >-
+        Enumerate every input the change accepts from outside the trust boundary,
+        including headers, filenames, message payloads and database content
+        originally supplied by users.
+    - step: Identify dangerous sinks
+      description: >-
+        Locate query execution, command execution, file paths, deserialisation,
+        template rendering, redirects and outbound requests reachable from the change.
+    - step: Trace source to sink
+      description: >-
+        Follow each untrusted value to each sink and determine whether it is
+        validated, parameterised or encoded at the boundary it crosses.
+    - step: Check authorisation on new paths
+      description: >-
+        Verify every new entry point enforces authorisation, and that object-level
+        access is checked rather than only endpoint-level.
+    - step: Review secret handling
+      description: >-
+        Check for secrets in code, logs and error messages, and confirm they are
+        sourced from a manager with appropriate scope.
+    - step: Review cryptographic use
+      description: >-
+        Verify algorithms, key management, randomness source and comparison
+        functions against known-correct patterns.
+    - step: Consider the attacker's path
+      description: >-
+        Ask what an attacker with each adversary class's access could do with this
+        change, rather than only whether the code is correct.
+    - step: Report with exploit scenarios
+      description: >-
+        Give each finding a concrete exploitation scenario and a specific fix.
+  decision_rules:
+    - condition: Untrusted input reaches a sink without validation at the boundary
+      action: Raise as blocking regardless of upstream validation elsewhere.
+    - condition: A new endpoint lacks object-level authorisation
+      action: Raise as blocking; endpoint-level authorisation alone permits horizontal access.
+    - condition: A secret appears in code, logs or error output
+      action: Raise as blocking and require rotation of the exposed value.
+    - condition: Custom cryptography is introduced
+      action: Reject in favour of a vetted library and escalate for security review.
+    - condition: The change disables or weakens an existing control
+      action: Escalate rather than reviewing it as an ordinary change.
+  outputs:
+    - name: security_findings
+      type: json
+      description: Findings with source, sink, exploitation scenario, severity and fix.
+    - name: dataflow_map
+      type: json
+      description: Untrusted sources traced to sinks with the validation observed at each boundary.
+    - name: verdict
+      type: enum
+      description: Approve, approve with conditions, or block.
+    - name: rotation_required
+      type: string[]
+      description: Secrets exposed by the change that must be rotated.
+  validation:
+    - check: Every untrusted source in the change is traced to every reachable sink.
+    - check: Authorisation is verified at object level on new paths.
+    - check: Every finding includes a concrete exploitation scenario.
+    - check: Secret and cryptographic handling was explicitly reviewed.
+  failure_modes:
+    - failure: Input is validated in one caller and the direct path remains unvalidated.
+      mitigation: Require validation at the boundary the sink sits behind, not upstream.
+    - failure: Endpoint-level authorisation passes while any user can access any object.
+      mitigation: Check object-level authorisation explicitly on every new path.
+    - failure: A secret enters logs through an error message and is never noticed.
+      mitigation: Review error and logging paths for secret exposure as a mandatory step.
+    - failure: Findings are theoretical and the author dismisses them.
+      mitigation: Require an exploitation scenario for every finding.
+  escalation:
+    - condition: The change introduces an exploitable vulnerability in a live path.
+      action: Block the merge and escalate to the security owner immediately.
+    - condition: A secret has been committed to history.
+      action: Escalate for rotation and history remediation; removal from the tip is insufficient.
+    - condition: Custom cryptography or a bespoke authentication scheme is introduced.
+      action: Escalate for specialist review before approval.
+  examples:
+    - title: Reviewing a file upload feature
+      input:
+        trust_context: Filenames and content are attacker-controlled
+        data_sensitivity: Shared storage with customer documents
+      output:
+        verdict: block
+        security_findings: [Path traversal via filename; storage path built by concatenation]
+    - title: Reviewing an internal reporting endpoint
+      input:
+        trust_context: Authenticated employees, tenant-scoped data
+      output:
+        verdict: block
+        security_findings: [Tenant id taken from a request parameter rather than the session]
+  related_skills:
+    prerequisites: [codebase-orientation]
+    complementary: [code-review, threat-model-construction, vulnerability-triage]
+    successors: [vulnerability-triage, release-readiness-check]
+    related: [tool-permission-scoping, prompt-injection-defense]
+  complexity: expert
+  build_speed: 2
+  shareability: 3
+  maturity: production
+  tags: [security, code-review, dataflow, authorisation, secrets]
+  author: Agent Skills Compendium
+  license: CC-BY-4.0
+  risk_level: high
+  required_permissions: [repo.read]
+  restricted_actions: [Exploiting a found vulnerability, Approving a change with an unresolved blocking finding]
+  created_at: "2025-03-16T00:00:00Z"
+  updated_at: "2025-08-22T00:00:00Z"

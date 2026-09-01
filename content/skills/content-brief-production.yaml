@@ -1,0 +1,138 @@
+skill:
+  id: skl-content-brief-production
+  name: Content Brief Production
+  slug: content-brief-production
+  version: 1.0.0
+  category: marketing-content
+  layer: L3
+  domain: null
+  description: Specify a piece of content precisely enough that a writer produces the intended thing on the first attempt.
+  purpose: >-
+    Content fails at the brief, not at the draft. This skill fixes the reader, the
+    single job the piece does, the claims it may make, the evidence it must use
+    and the standard it will be judged against — before anyone writes.
+  trigger: >-
+    A content piece is being commissioned, or drafts keep missing the intent.
+  inputs:
+    - name: objective
+      required: true
+      type: string
+      description: What the content should cause, stated as a reader behaviour rather than as a topic.
+    - name: reader
+      required: true
+      type: string
+      description: Who reads it, what they already believe, and what they are trying to do.
+    - name: message_hierarchy
+      required: false
+      type: string
+      description: Approved claims and proof this piece may use.
+    - name: distribution
+      required: true
+      type: string
+      description: Where it will appear, which constrains form, length and search intent.
+  prerequisites:
+    - messaging-framework
+  tools:
+    - llm-inference
+    - web-search
+    - document-generator
+  dependencies:
+    - Approved claims and proof assets where the content makes product claims
+  procedure:
+    - step: State the one job
+      description: >-
+        Define the single job this piece does. Content asked to do three jobs
+        typically does none.
+    - step: Define the reader's starting state
+      description: >-
+        State what the reader believes before reading and what should be different
+        after, so the writer knows what to argue.
+    - step: Fix the claims and the proof
+      description: >-
+        List the claims this piece may make and the evidence it must use, drawn
+        from the approved hierarchy.
+    - step: Specify the structure
+      description: >-
+        Give the argument sequence, not just a heading list, so the writer knows
+        why sections are ordered as they are.
+    - step: Set the search and distribution constraints
+      description: >-
+        Specify intent, format and length requirements imposed by where it will
+        appear.
+    - step: Define the acceptance standard
+      description: >-
+        State what a good draft does, in checkable terms, so review is not a
+        matter of taste.
+    - step: List the prohibitions
+      description: >-
+        Name the claims that may not be made and the framings to avoid, including
+        competitor references and unsubstantiated superlatives.
+  decision_rules:
+    - condition: The objective is a topic rather than a reader behaviour
+      action: Rewrite it as a behaviour before commissioning.
+    - condition: The piece would need claims outside the approved hierarchy
+      action: Escalate for claim approval rather than allowing the writer to improvise.
+    - condition: The reader's starting belief is unknown
+      action: Make establishing it a prerequisite; content that misjudges this fails regardless of quality.
+    - condition: The piece is asked to serve two distinct readers
+      action: Split it into two pieces.
+  outputs:
+    - name: content_brief
+      type: document
+      description: Objective, reader, job, claims, proof, structure, constraints, acceptance standard, prohibitions.
+    - name: acceptance_checklist
+      type: string[]
+      description: Checkable conditions a draft must satisfy.
+    - name: approved_claims
+      type: string[]
+      description: Claims this piece may make, with their proof.
+  validation:
+    - check: The objective is expressed as a reader behaviour.
+    - check: Every claim permitted has attached proof.
+    - check: The acceptance standard is checkable rather than subjective.
+    - check: Prohibitions are stated explicitly.
+  failure_modes:
+    - failure: The brief names a topic and the draft is judged against an unstated intent.
+      mitigation: Require a behavioural objective and a checkable acceptance standard.
+    - failure: The writer invents claims to fill the structure.
+      mitigation: Fix the claim set and require escalation for anything outside it.
+    - failure: The piece serves two readers and persuades neither.
+      mitigation: Enforce one reader and one job per brief.
+    - failure: Review becomes a matter of taste and the draft cycles.
+      mitigation: Deliver the acceptance checklist with the brief.
+  escalation:
+    - condition: The objective requires a claim the company cannot substantiate.
+      action: Escalate to legal and marketing leadership before commissioning.
+    - condition: The content involves customer names or data.
+      action: Route for customer approval before publication.
+  examples:
+    - title: Brief for a technical comparison page
+      input:
+        objective: Platform engineers evaluating alternatives shortlist us
+        distribution: Organic search on comparison intent
+      output:
+        prohibitions: [No unsubstantiated performance superlatives, No naming competitor defects]
+        acceptance_checklist: [Every comparison row cites a verifiable source]
+    - title: Brief for a customer story
+      input:
+        objective: Compliance leads recognise their own situation and request a call
+        reader: Compliance lead at a regulated mid-market firm
+      output:
+        approved_claims: [Time to evidence reduced from weeks to a day, with named metric]
+  related_skills:
+    prerequisites: [messaging-framework]
+    complementary: [audience-adaptive-rewrite, structured-critique]
+    successors: [campaign-performance-readout]
+    related: [executive-brief, technical-specification]
+  complexity: beginner
+  build_speed: 3
+  shareability: 2
+  maturity: production
+  tags: [marketing, content, briefs, claims, editorial]
+  author: Agent Skills Compendium
+  license: CC-BY-4.0
+  risk_level: low
+  required_permissions: [document.write]
+  restricted_actions: [Permitting claims outside the approved hierarchy]
+  created_at: "2025-03-04T00:00:00Z"
+  updated_at: "2025-07-11T00:00:00Z"

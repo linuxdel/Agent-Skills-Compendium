@@ -1,0 +1,97 @@
+# Agent Skills Compendium
+# Copyright © 2026 Jerson Boyd Milan
+
+layers:
+  - id: L1
+    slug: cognitive
+    name: Cognitive
+    tagline: How an agent thinks before it acts
+    question: What is actually being decided here?
+    description: >-
+      Cognitive skills operate on representations rather than on the world. They
+      decompose an ambiguous request into a tractable plan, classify a situation
+      against known patterns, weigh options under uncertainty, and decide what
+      deserves attention. A cognitive skill consumes context and produces
+      judgement — never a side effect. Everything an agent does downstream
+      inherits the quality of this layer.
+    characteristics:
+      - Operates on representations, not on external systems
+      - Produces plans, classifications, rankings and rationales
+      - Has no irreversible side effects
+      - Failure shows up as bad downstream work, not as an error
+      - Validated by internal consistency and stated assumptions
+
+  - id: L2
+    slug: knowledge
+    name: Knowledge
+    tagline: How an agent knows what it claims to know
+    question: Where did this fact come from and how much do we trust it?
+    description: >-
+      Knowledge skills acquire, verify, structure and retain information. They
+      cover retrieval, source triangulation, document extraction, memory writes,
+      knowledge-graph construction and freshness management. The defining
+      property is provenance — a knowledge skill that returns a claim without a
+      traceable source and a confidence signal has failed, even when the claim
+      happens to be true.
+    characteristics:
+      - Every output carries provenance and a confidence signal
+      - Distinguishes primary sources from secondary reporting
+      - Handles staleness, contradiction and missing evidence explicitly
+      - Read-heavy against the world, write-heavy against memory
+      - Validated by source verifiability, not by fluency
+
+  - id: L3
+    slug: action
+    name: Action
+    tagline: How an agent changes something outside itself
+    question: What state in the world will be different after this runs?
+    description: >-
+      Action skills produce artifacts and mutate external systems: writing
+      documents, generating and shipping code, calling APIs, manipulating files,
+      driving browsers, sending structured payloads. This is the layer where
+      mistakes become real, so every action skill carries an explicit blast
+      radius, a validation step that runs before the irreversible part, and a
+      defined rollback or escalation path.
+    characteristics:
+      - Produces artifacts or mutates external state
+      - Carries an explicit blast radius and reversibility profile
+      - Validates before the irreversible step, not after
+      - Requires named permissions and named restricted actions
+      - Validated against the artifact, not against the intent
+
+  - id: L4
+    slug: domain
+    name: Domain
+    tagline: How an agent applies a field's own standards
+    question: Would a competent practitioner in this field accept this output?
+    description: >-
+      Domain skills encode the conventions, regulations, formats and failure
+      patterns of a specific field — financial close, threat modelling, clinical
+      documentation, motion planning, contract review. A domain skill is a
+      general capability plus a body of field-specific rules that make its
+      output acceptable to a practitioner. These skills carry the highest
+      correctness bar and the sharpest escalation triggers.
+    characteristics:
+      - Encodes field conventions, formats and regulatory constraints
+      - Correctness is judged by domain practitioners, not by users
+      - Frequently carries legal, financial or physical consequence
+      - Escalates to a licensed or accountable human at defined thresholds
+      - Validated against the field's own acceptance criteria
+
+  - id: L5
+    slug: agentic
+    name: Agentic
+    tagline: How an agent runs itself and other agents
+    question: Who is doing this work, and who is checking it?
+    description: >-
+      Agentic skills are the control plane. They select tools, decompose work
+      across sub-agents, route tasks, verify the output of other skills, monitor
+      long-running execution, recover from failure and escalate to humans. They
+      are the skills that turn a collection of capabilities into a system, and
+      they are the ones that decide when an agent should stop.
+    characteristics:
+      - Operates on other agents, skills and tools as its subject matter
+      - Owns verification, monitoring, recovery and escalation
+      - Determines autonomy boundaries and stop conditions
+      - Failure is systemic rather than local
+      - Validated by observed system behaviour under stress

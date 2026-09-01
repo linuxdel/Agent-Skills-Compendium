@@ -1,0 +1,155 @@
+skill:
+  id: skl-technical-due-diligence
+  name: Technical Due Diligence
+  slug: technical-due-diligence
+  version: 1.0.0
+  category: research-intelligence
+  layer: L2
+  domain: technology-investment
+  description: Assess whether a technology claim is real, durable and transferable, and quantify the risk of assuming it is.
+  purpose: >-
+    Acquisitions, partnerships and vendor selections routinely rest on a
+    capability claim that nobody tested. This skill converts claims into
+    verifiable propositions, tests what can be tested from the outside, and
+    reports residual risk as an explicit list rather than a verdict.
+  trigger: >-
+    Before committing capital, roadmap or contractual dependency to another
+    party's technology.
+  inputs:
+    - name: target
+      required: true
+      type: string
+      description: The company, product or system under diligence.
+    - name: claims
+      required: true
+      type: string[]
+      description: The specific technical claims the commitment depends on.
+    - name: access_level
+      required: true
+      type: string
+      description: What is available — public only, documentation, trial account, data room, or engineering access.
+    - name: deal_thesis
+      required: false
+      type: string
+      description: Why the commitment is being made, so diligence can attack the thesis rather than survey the system.
+  prerequisites:
+    - source-credibility-assessment
+  tools:
+    - web-search
+    - page-fetch
+    - document-parser
+    - web-browser
+    - code-search
+    - http-client
+    - llm-inference
+    - document-generator
+  dependencies:
+    - Whatever access the engagement grants; the skill degrades explicitly rather than guessing
+  procedure:
+    - step: Convert claims into falsifiable propositions
+      description: >-
+        Rewrite each claim so that a specific observation would disprove it.
+        Claims that cannot be made falsifiable are reported as unassessable.
+    - step: Map each proposition to available evidence
+      description: >-
+        Decide, per proposition, what the current access level can actually
+        establish, and mark the rest as gated on access.
+    - step: Test what is externally observable
+      description: >-
+        Exercise public APIs, read documentation for internal consistency, inspect
+        published artifacts, measure what can be measured without privileged access.
+    - step: Assess durability
+      description: >-
+        Separate a working system from a defensible one. Examine dependency
+        concentration, key-person exposure, licensing and architectural lock-in.
+    - step: Assess transferability
+      description: >-
+        Determine whether the capability survives the transaction — whether it
+        depends on people, data or contracts that may not transfer.
+    - step: Quantify residual risk
+      description: >-
+        For each unverified proposition, state the consequence if it is false and
+        what it would cost to verify it properly.
+    - step: Emit findings and a verification plan
+      description: >-
+        Deliver findings, residual risks and a prioritised list of what to verify
+        with the next access level.
+  decision_rules:
+    - condition: A claim cannot be stated in falsifiable form
+      action: Report it as unassessable and exclude it from the confidence summary.
+    - condition: Documentation contradicts observed API behaviour
+      action: Treat observed behaviour as authoritative and raise the contradiction as a maturity signal.
+    - condition: The capability depends on fewer than three named individuals
+      action: Raise key-person risk to high regardless of technical quality.
+    - condition: Access level cannot establish a thesis-critical claim
+      action: Recommend pausing rather than issuing a verdict on incomplete evidence.
+  outputs:
+    - name: diligence_findings
+      type: document
+      description: Proposition-by-proposition findings with evidence, verdicts and confidence.
+    - name: risk_register
+      type: json
+      description: Residual risks with consequence, likelihood signal, and verification cost.
+    - name: verification_plan
+      type: json
+      description: What to test at the next access level, in priority order.
+    - name: unassessable_claims
+      type: string[]
+      description: Claims that could not be made falsifiable or testable.
+  validation:
+    - check: Every input claim appears as a proposition, an unassessable item, or an explicit exclusion.
+    - check: Every verdict cites the observation that produced it.
+    - check: Residual risks state consequence, not just probability.
+    - check: No verdict exceeds what the stated access level can support.
+  failure_modes:
+    - failure: A survey of the architecture is delivered instead of a test of the thesis.
+      mitigation: Drive every workstream from a falsifiable proposition tied to the deal thesis.
+    - failure: Impressive documentation is mistaken for a working system.
+      mitigation: Weight observed behaviour above documentation wherever both exist.
+    - failure: Absence of evidence is reported as evidence of absence.
+      mitigation: Distinguish disproved, unverified and unassessable as separate verdicts.
+    - failure: Diligence stops at whether it works and ignores whether it transfers.
+      mitigation: Run the transferability step as a mandatory workstream.
+  escalation:
+    - condition: Evidence suggests misrepresentation to investors or customers.
+      action: Stop and escalate to deal counsel immediately; do not continue independent investigation.
+    - condition: Verification would require accessing systems without authorisation.
+      action: Refuse and record the item as gated on granted access.
+    - condition: A thesis-critical claim is disproved.
+      action: Escalate to the decision owner before completing the remaining workstreams.
+  examples:
+    - title: Diligence on a vendor's claimed real-time processing
+      input:
+        target: Meridian Streams
+        claims: [Sub-second end-to-end latency at 50k events per second]
+        access_level: trial account
+      output:
+        verdict: Partially verified — sub-second held to 8k events per second in trial limits
+        residual_risks: [Behaviour above trial ceiling unverified, Backpressure semantics undocumented]
+        verification_plan: [Load test in their staging with engineering present]
+    - title: Pre-acquisition assessment of an ML capability
+      input:
+        target: Cobalt Vision
+        claims: [Proprietary model outperforms open baselines on client data]
+        access_level: data room
+        deal_thesis: Model quality is the durable advantage
+      output:
+        verdict: Advantage traced to labelled dataset, not to model architecture
+        residual_risks: [Dataset rights may not transfer, Two engineers hold the labelling pipeline]
+  related_skills:
+    prerequisites: [source-credibility-assessment]
+    complementary: [competitive-intelligence-report, codebase-orientation, threat-model-construction]
+    successors: [build-buy-partner-decision, risk-weighted-recommendation]
+    related: [evidence-synthesis, executive-brief]
+  complexity: expert
+  build_speed: 1
+  shareability: 2
+  maturity: beta
+  tags: [diligence, investment, verification, risk, technology]
+  author: Agent Skills Compendium
+  license: CC-BY-4.0
+  risk_level: high
+  required_permissions: [web.read, api.read, document.write]
+  restricted_actions: [Unauthorised access to target systems, Load testing production without written permission]
+  created_at: "2025-02-18T00:00:00Z"
+  updated_at: "2025-08-05T00:00:00Z"

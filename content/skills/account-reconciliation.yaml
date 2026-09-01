@@ -1,0 +1,150 @@
+skill:
+  id: skl-account-reconciliation
+  name: Account Reconciliation
+  slug: account-reconciliation
+  version: 1.1.0
+  category: finance-operations
+  layer: L4
+  domain: finance
+  description: Reconcile two records of the same activity, explain every difference, and produce audit-ready evidence of the resolution.
+  purpose: >-
+    Reconciliation is not agreement between totals; it is a complete explanation
+    of every difference. This skill matches at transaction level, classifies each
+    exception by cause, and leaves an evidence trail that an auditor can follow
+    without re-performing the work.
+  trigger: >-
+    Period close, a control requirement, or an unexplained difference between two
+    systems of record.
+  inputs:
+    - name: source_a
+      required: true
+      type: string
+      description: The first record, usually the ledger.
+    - name: source_b
+      required: true
+      type: string
+      description: The second record, usually a bank, processor or subledger statement.
+    - name: period
+      required: true
+      type: string
+      description: The reconciliation period with explicit cutoff rules.
+    - name: materiality
+      required: false
+      type: string
+      description: The threshold below which differences are aggregated rather than individually explained.
+  prerequisites:
+    - dataset-profiling
+  tools:
+    - sql-client
+    - spreadsheet
+    - dataframe-runtime
+    - document-generator
+    - audit-log
+  dependencies:
+    - Read access to both systems at transaction level, not summary level
+  procedure:
+    - step: Confirm scope and cutoff
+      description: >-
+        Establish the period boundaries and how items at the boundary are
+        assigned. Cutoff errors are the most common source of false differences.
+    - step: Normalise both sides
+      description: >-
+        Align currency, sign convention, timezone and grain before matching.
+        Matching unnormalised data produces spurious exceptions.
+    - step: Match at transaction level
+      description: >-
+        Match on identifiers first, then on amount and date within a tolerance,
+        recording the basis of every match.
+    - step: Classify every exception
+      description: >-
+        Assign each unmatched item a cause — timing, fee, error, duplicate,
+        missing entry, foreign exchange — rather than leaving it unexplained.
+    - step: Quantify and age
+      description: >-
+        Total exceptions by class and age them, since old unexplained items
+        indicate a process failure rather than a timing difference.
+    - step: Propose adjustments
+      description: >-
+        Prepare correcting entries with references, but do not post them; posting
+        is a human authorisation.
+    - step: Produce the evidence package
+      description: >-
+        Assemble the reconciliation statement, exception detail and support so an
+        auditor can verify without redoing the match.
+  decision_rules:
+    - condition: Totals agree but transaction-level matching does not
+      action: Continue investigating; offsetting errors are a control failure even when the total is right.
+    - condition: An exception cannot be classified
+      action: Escalate it rather than assigning it to a residual bucket.
+    - condition: An exception exceeds materiality
+      action: Explain it individually with support, regardless of its age.
+    - condition: Unexplained items persist across periods
+      action: Report a process failure rather than carrying the item forward again.
+    - condition: An exception indicates a possible misappropriation
+      action: Stop, preserve evidence and escalate immediately.
+  outputs:
+    - name: reconciliation_statement
+      type: document
+      description: Balances, matched totals, exception summary and sign-off block.
+    - name: exception_detail
+      type: json
+      description: Every unmatched item with cause, age, amount and support reference.
+    - name: proposed_adjustments
+      type: json
+      description: Correcting entries prepared for human authorisation.
+    - name: evidence_package
+      type: document
+      description: Audit-ready support for the reconciliation and its exceptions.
+  validation:
+    - check: Every item on both sides is either matched or classified as an exception.
+    - check: Matching is at transaction level, not summary level.
+    - check: Exceptions above materiality are individually explained with support.
+    - check: No adjustment has been posted by the agent.
+  failure_modes:
+    - failure: Agreeing totals conceal offsetting errors.
+      mitigation: Require transaction-level matching regardless of total agreement.
+    - failure: Timezone or cutoff differences are classified as errors.
+      mitigation: Normalise and fix cutoff rules before matching.
+    - failure: A residual bucket absorbs unexplained differences period after period.
+      mitigation: Prohibit unclassified exceptions; escalate instead.
+    - failure: A duplicate payment is netted against a missing entry and both disappear.
+      mitigation: Classify by cause rather than by net effect.
+  escalation:
+    - condition: An exception suggests fraud or misappropriation.
+      action: Stop work, preserve the evidence and escalate to the controller and audit immediately.
+    - condition: Unexplained differences exceed materiality at period end.
+      action: Escalate to the financial controller before close.
+    - condition: Adjustments require authorisation.
+      action: Route to the authorised approver; the agent never posts entries.
+  examples:
+    - title: Monthly payment processor reconciliation
+      input:
+        source_a: General ledger cash account
+        source_b: Processor settlement report
+        period: 2025-07 with 23:59 UTC cutoff
+      output:
+        exceptions: 46 items, 41 timing, 4 fees, 1 unexplained above materiality
+        escalation: One 12,400 unexplained item routed to controller
+    - title: Intercompany balance reconciliation
+      input:
+        source_a: Entity A subledger
+        source_b: Entity B subledger
+      output:
+        exception_detail: {fx_translation: 9 items, timing: 3 items, aged_over_90_days: 2 items}
+  related_skills:
+    prerequisites: [dataset-profiling]
+    complementary: [variance-analysis, control-evidence-collection]
+    successors: [control-evidence-collection]
+    related: [idempotent-integration-design, metric-definition]
+  complexity: advanced
+  build_speed: 2
+  shareability: 2
+  maturity: production
+  tags: [finance, reconciliation, close, controls, audit]
+  author: Agent Skills Compendium
+  license: CC-BY-4.0
+  risk_level: high
+  required_permissions: [finance.read]
+  restricted_actions: [Posting journal entries, Approving adjustments, Modifying ledger records]
+  created_at: "2025-01-24T00:00:00Z"
+  updated_at: "2025-08-15T00:00:00Z"

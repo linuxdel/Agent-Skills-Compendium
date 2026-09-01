@@ -1,0 +1,150 @@
+skill:
+  id: skl-account-research
+  name: Account Research
+  slug: account-research
+  version: 1.1.0
+  category: sales-gtm
+  layer: L2
+  domain: revenue
+  description: Build an account picture that identifies the buying situation, not just the company profile.
+  purpose: >-
+    Account research usually produces facts anyone could look up and no reason to
+    act now. This skill identifies the change that creates the buying window, the
+    people whose problem it is, and the specific hypothesis the seller should
+    test — grounded in evidence with dates.
+  trigger: >-
+    Before first contact with an account, before a major meeting, or when an
+    opportunity has stalled without explanation.
+  inputs:
+    - name: account
+      required: true
+      type: string
+      description: The company, and the division if the buying centre is not company-wide.
+    - name: offering
+      required: true
+      type: string
+      description: What is being sold, so research targets the relevant problem.
+    - name: engagement_stage
+      required: true
+      type: string
+      description: Pre-contact, active opportunity or stalled deal, which changes what matters.
+    - name: internal_history
+      required: false
+      type: string
+      description: Prior contact, support history and past losses with this account.
+  prerequisites:
+    - source-credibility-assessment
+  tools:
+    - web-search
+    - web-browser
+    - page-fetch
+    - crm
+    - llm-inference
+    - document-generator
+  dependencies:
+    - CRM access for internal history; public web access for external signals
+  procedure:
+    - step: Establish the buying centre
+      description: >-
+        Identify which part of the organisation would own this problem and hold
+        its budget, rather than profiling the whole company.
+    - step: Find the change
+      description: >-
+        Look for the event that makes this problem urgent — leadership change,
+        funding, regulation, incident, growth, migration. Without a change there
+        is usually no deal.
+    - step: Map roles to the problem
+      description: >-
+        Identify who feels the pain, who controls the budget, who can block, and
+        who has publicly signalled a view.
+    - step: Read the internal history
+      description: >-
+        Review prior interactions, support issues and past losses; these often
+        explain more about the account's stance than any external signal.
+    - step: Identify the current alternative
+      description: >-
+        Determine what they use today, since that is what a purchase must displace.
+    - step: Form a testable hypothesis
+      description: >-
+        State the problem the account plausibly has and the specific question
+        that would confirm or refute it in a conversation.
+    - step: Assemble the brief with dates
+      description: >-
+        Deliver a short brief where every claim carries a source and a date, and
+        speculation is labelled.
+  decision_rules:
+    - condition: No change event can be identified
+      action: Report a low-urgency account and recommend nurture rather than active pursuit.
+    - condition: Internal history shows a past loss
+      action: Make the loss reason the primary research question before anything else.
+    - condition: Public evidence about individuals is personal rather than professional
+      action: Exclude it; research covers the buying situation, not private lives.
+    - condition: The buying centre cannot be identified
+      action: Report it as the first discovery objective rather than guessing.
+  outputs:
+    - name: account_brief
+      type: document
+      description: Buying centre, change event, roles, current alternative, hypothesis, with dated sources.
+    - name: stakeholder_map
+      type: json
+      description: People, roles in the decision, stated positions and evidence.
+    - name: hypothesis
+      type: string
+      description: The problem hypothesis and the question that would test it.
+    - name: risk_signals
+      type: string[]
+      description: Evidence suggesting the account is not a fit or not ready.
+  validation:
+    - check: Every external claim carries a source and a date.
+    - check: A change event is identified or its absence is explicitly reported.
+    - check: The hypothesis is testable in a single conversation.
+    - check: Only professional, publicly available information about individuals is included.
+  failure_modes:
+    - failure: The brief lists company facts with no reason to act now.
+      mitigation: Require a change event or an explicit low-urgency verdict.
+    - failure: Research profiles the company while the buying centre is a single division.
+      mitigation: Establish the buying centre before gathering anything else.
+    - failure: Internal loss history is ignored and the same objection recurs.
+      mitigation: Make internal history a mandatory step.
+    - failure: Personal information about individuals is compiled.
+      mitigation: Restrict to professional, role-relevant public information.
+  escalation:
+    - condition: Research surfaces material non-public information.
+      action: Stop, do not record it, and notify compliance.
+    - condition: The account is under litigation, sanction or investigation.
+      action: Escalate to legal before further engagement.
+  examples:
+    - title: Pre-contact research on an enterprise prospect
+      input:
+        account: Vestry Financial, technology division
+        offering: Continuous control monitoring
+        engagement_stage: pre-contact
+      output:
+        change_event: New regulatory deadline plus a compliance lead hired in June
+        hypothesis: Manual evidence collection cannot meet the new reporting cadence
+        risk_signals: [Recent enterprise agreement with a competing GRC suite]
+    - title: Research on a stalled opportunity
+      input:
+        account: Harbourline Logistics
+        engagement_stage: stalled deal
+        internal_history: Two demos, no economic buyer identified
+      output:
+        hypothesis: The problem is owned by operations but the budget sits with finance
+        stakeholder_map: {economic_buyer: unidentified — primary objective}
+  related_skills:
+    prerequisites: [source-credibility-assessment]
+    complementary: [competitive-intelligence-report, stakeholder-mapping]
+    successors: [deal-risk-assessment, executive-brief]
+    related: [knowledge-synthesis-brief, positioning-framework]
+  complexity: intermediate
+  build_speed: 3
+  shareability: 3
+  maturity: production
+  tags: [sales, research, accounts, buying-centre, gtm]
+  author: Agent Skills Compendium
+  license: CC-BY-4.0
+  risk_level: medium
+  required_permissions: [web.read, crm.read]
+  restricted_actions: [Compiling personal information about individuals, Recording material non-public information]
+  created_at: "2025-01-31T00:00:00Z"
+  updated_at: "2025-08-10T00:00:00Z"

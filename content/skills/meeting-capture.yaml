@@ -1,0 +1,144 @@
+skill:
+  id: skl-meeting-capture
+  name: Meeting Capture
+  slug: meeting-capture
+  version: 1.0.0
+  category: personal-productivity
+  layer: L3
+  domain: null
+  description: Turn a discussion into decisions, owned actions and open questions, discarding the rest.
+  purpose: >-
+    A transcript preserves everything and is therefore read by nobody. This skill
+    extracts only what changes future behaviour — what was decided, what was
+    committed, what remains open, and what was explicitly rejected — and captures
+    the reasoning that will otherwise be re-argued.
+  trigger: >-
+    A meeting or discussion has occurred whose outcomes others depend on.
+  inputs:
+    - name: transcript
+      required: true
+      type: string
+      description: Notes, transcript or recording of the discussion.
+    - name: participants
+      required: true
+      type: string
+      description: Who was present and their roles, needed to attribute commitments correctly.
+    - name: meeting_purpose
+      required: true
+      type: string
+      description: What the meeting was for, which determines what counts as an outcome.
+    - name: prior_context
+      required: false
+      type: string
+      description: Previous decisions on the topic, so changes are visible as changes.
+  prerequisites: []
+  tools:
+    - document-parser
+    - llm-inference
+    - issue-tracker
+    - calendar
+    - document-generator
+  dependencies:
+    - A record of the discussion; this skill does not attend meetings
+  procedure:
+    - step: Extract decisions
+      description: >-
+        Identify what was actually decided, distinguishing decisions from
+        discussion that reached no conclusion.
+    - step: Capture the reasoning behind each decision
+      description: >-
+        Record why, including the option rejected. Without it the decision is
+        reopened at the next meeting.
+    - step: Extract commitments with owners
+      description: >-
+        Identify who committed to what by when. A commitment without a named
+        owner is not a commitment.
+    - step: Separate open questions from actions
+      description: >-
+        Distinguish work to be done from questions to be answered; they need
+        different handling.
+    - step: Record explicit rejections
+      description: >-
+        Capture what was considered and rejected, which prevents the same
+        proposal returning.
+    - step: Flag unattributed commitments
+      description: >-
+        Where something must be done but nobody accepted it, surface it as
+        unowned rather than assigning it silently.
+    - step: Distribute to those affected
+      description: >-
+        Deliver to participants and to those whose work changes, not just to
+        attendees.
+  decision_rules:
+    - condition: A discussion reached no conclusion
+      action: Record it as an open question, not as a decision.
+    - condition: An action has no named owner
+      action: Flag it as unowned; do not infer an owner.
+    - condition: A decision reverses a prior one
+      action: Record it as a reversal with the reason, so history remains coherent.
+    - condition: A commitment lacks a date
+      action: Request one rather than recording an undated intention.
+    - condition: The meeting was exploratory
+      action: Capture the questions and positions rather than manufacturing decisions.
+  outputs:
+    - name: decisions
+      type: json
+      description: Each decision with its reasoning and rejected alternatives.
+    - name: commitments
+      type: json
+      description: Owner, action and date per commitment.
+    - name: open_questions
+      type: json
+      description: Unresolved questions with who could answer them.
+    - name: unowned_items
+      type: string[]
+      description: Work identified but not accepted by anyone.
+  validation:
+    - check: Every decision includes its reasoning.
+    - check: Every commitment has a named owner and a date.
+    - check: Discussion without conclusion is recorded as open, not as decided.
+    - check: Unowned work is flagged rather than assigned by inference.
+  failure_modes:
+    - failure: A full transcript is produced and nobody reads it.
+      mitigation: Extract only decisions, commitments and open questions.
+    - failure: Reasoning is omitted and the decision is relitigated.
+      mitigation: Capture the rejected alternative and the reason.
+    - failure: An action is assigned to someone who did not accept it.
+      mitigation: Flag unowned items rather than inferring owners.
+    - failure: Exploratory discussion is written up as decisions nobody made.
+      mitigation: Match output type to meeting purpose.
+  escalation:
+    - condition: A decision was made by someone without the authority to make it.
+      action: Flag it to the accountable owner before it is acted on.
+    - condition: A commitment conflicts with an existing one.
+      action: Surface the conflict to both owners rather than recording both.
+  examples:
+    - title: Capturing an architecture discussion
+      input:
+        meeting_purpose: Decide the message delivery guarantee
+      output:
+        decisions: [At-least-once with idempotent consumers, rejecting exactly-once on latency grounds]
+        unowned_items: [Documenting the idempotency requirement for future consumers]
+    - title: Capturing a customer escalation call
+      input:
+        meeting_purpose: Agree a remediation plan with the customer
+      output:
+        commitments: 4 items with owners and dates
+        open_questions: [Whether the SLA credit applies to the affected period]
+  related_skills:
+    prerequisites: []
+    complementary: [commitment-triage, architecture-decision-record]
+    successors: [commitment-triage, executive-brief]
+    related: [knowledge-synthesis-brief, structured-critique]
+  complexity: beginner
+  build_speed: 3
+  shareability: 3
+  maturity: production
+  tags: [productivity, meetings, decisions, commitments, capture]
+  author: Agent Skills Compendium
+  license: CC-BY-4.0
+  risk_level: low
+  required_permissions: [document.write]
+  restricted_actions: [Assigning owners who did not accept the work, Distributing notes containing confidential material beyond attendees]
+  created_at: "2025-04-09T00:00:00Z"
+  updated_at: "2025-07-10T00:00:00Z"

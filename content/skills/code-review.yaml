@@ -1,0 +1,152 @@
+skill:
+  id: skl-code-review
+  name: Code Review
+  slug: code-review
+  version: 1.2.0
+  category: coding-engineering
+  layer: L1
+  domain: software-engineering
+  description: Evaluate a diff for defects that matter, ranked by consequence, with a concrete failure scenario behind every claim.
+  purpose: >-
+    Review degrades into style commentary because style is easy to see and
+    correctness is not. This skill directs attention to the classes where defects
+    actually escape — failure paths, concurrency, boundaries, security, data
+    integrity — and requires each finding to name inputs that produce the wrong
+    behaviour.
+  trigger: >-
+    A change is proposed for merge, or an existing change must be assessed before
+    release.
+  inputs:
+    - name: diff
+      required: true
+      type: string
+      description: The change under review, with sufficient surrounding context.
+    - name: intent
+      required: true
+      type: string
+      description: What the change is supposed to accomplish.
+    - name: risk_profile
+      required: false
+      type: string
+      description: What this code affects if it fails — money, data, safety, availability.
+    - name: conventions
+      required: false
+      type: string
+      description: The codebase's observed conventions, so review does not impose foreign ones.
+  prerequisites:
+    - codebase-orientation
+  tools:
+    - code-search
+    - version-control
+    - file-system
+    - test-runner
+    - llm-inference
+  dependencies:
+    - Read access to the repository around the diff, not just the diff itself
+  procedure:
+    - step: Establish what the change is meant to do
+      description: >-
+        Review against intent. A diff that is internally consistent but does not
+        achieve the intent is the most costly kind of defect to miss.
+    - step: Read the diff in its context
+      description: >-
+        Open the surrounding code and callers. Most real defects are invisible
+        inside the diff window alone.
+    - step: Attack the failure paths
+      description: >-
+        Examine error handling, timeouts, retries, partial writes and resource
+        cleanup before examining the happy path.
+    - step: Check boundaries and concurrency
+      description: >-
+        Test empty, single, maximum, null and concurrent cases mentally against
+        the code as written.
+    - step: Check data and security consequences
+      description: >-
+        Look for unvalidated input reaching a sink, permission checks omitted on
+        a new path, and irreversible data operations without guards.
+    - step: Assess test adequacy
+      description: >-
+        Determine whether the tests would fail if the implementation were wrong,
+        rather than whether tests exist.
+    - step: Look for simplification and reuse
+      description: >-
+        Identify existing code that already does this, and structure that could
+        be materially simpler at equal correctness.
+    - step: Rank and write findings
+      description: >-
+        Order by consequence and give each finding a concrete failure scenario
+        and a specific proposed change.
+  decision_rules:
+    - condition: A finding has no concrete failure scenario
+      action: Drop it or demote it to a non-blocking note; speculative findings waste the author's time.
+    - condition: The change is correct but does not achieve the stated intent
+      action: Raise that as the single top finding.
+    - condition: A style difference does not affect meaning
+      action: Do not raise it unless it violates a stated project convention.
+    - condition: The risk profile involves money, data loss or safety
+      action: Raise the review depth and require explicit reasoning about irreversibility.
+    - condition: Tests would pass with an obviously wrong implementation
+      action: Treat test inadequacy as a blocking finding.
+  outputs:
+    - name: findings
+      type: json
+      description: Ranked findings with file, line, severity, failure scenario and proposed change.
+    - name: blocking_set
+      type: string[]
+      description: Findings that must be resolved before merge.
+    - name: verdict
+      type: enum
+      description: Approve, approve with comments, or request changes.
+    - name: review_notes
+      type: document
+      description: What was examined, what was not, and the basis for the verdict.
+  validation:
+    - check: Every blocking finding names inputs or conditions that produce wrong behaviour.
+    - check: Failure paths were reviewed, not only the happy path.
+    - check: Test adequacy was assessed, not merely test presence.
+    - check: Style findings are non-blocking unless they violate a stated convention.
+  failure_modes:
+    - failure: Review consists of naming conventions and formatting while a concurrency defect ships.
+      mitigation: Order the procedure so failure paths and concurrency are examined before style.
+    - failure: Findings are speculative and the author cannot act on them.
+      mitigation: Require a concrete failure scenario for every finding.
+    - failure: The diff is approved because it is internally consistent, missing that it solves the wrong problem.
+      mitigation: Review against intent first.
+    - failure: Existing tests pass and are taken as evidence of correctness.
+      mitigation: Assess whether the tests would fail under a wrong implementation.
+  escalation:
+    - condition: The change introduces a security or privacy exposure.
+      action: Block the merge and escalate to the security owner rather than filing a comment.
+    - condition: The change conflicts with an architectural decision.
+      action: Escalate to the decision owner before approving or rejecting.
+  examples:
+    - title: Reviewing a caching change
+      input:
+        intent: Reduce database load on the product listing endpoint
+        risk_profile: availability
+      output:
+        verdict: request changes
+        blocking_set: [Cache key omits tenant id — cross-tenant data exposure on shared listings]
+    - title: Reviewing a retry addition
+      input:
+        intent: Handle transient partner API failures
+      output:
+        verdict: approve with comments
+        findings: [Retry wraps a non-idempotent POST; duplicate charges possible on timeout-then-success]
+  related_skills:
+    prerequisites: [codebase-orientation]
+    complementary: [structured-critique, test-suite-authoring, secure-code-review]
+    successors: [release-readiness-check]
+    related: [feature-implementation, debug-root-cause-analysis]
+  complexity: advanced
+  build_speed: 3
+  shareability: 3
+  maturity: production
+  tags: [review, engineering, quality, defects, correctness]
+  author: Agent Skills Compendium
+  license: CC-BY-4.0
+  risk_level: low
+  required_permissions: [repo.read]
+  restricted_actions: [Approving a change with an unresolved security finding]
+  created_at: "2025-01-12T00:00:00Z"
+  updated_at: "2025-08-24T00:00:00Z"

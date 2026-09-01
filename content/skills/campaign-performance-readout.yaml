@@ -1,0 +1,144 @@
+skill:
+  id: skl-campaign-performance-readout
+  name: Campaign Performance Readout
+  slug: campaign-performance-readout
+  version: 1.0.0
+  category: marketing-content
+  layer: L3
+  domain: marketing
+  description: Report what a campaign actually caused, separating incremental effect from activity that would have happened anyway.
+  purpose: >-
+    Campaign reporting attributes everything it can see and ignores what it
+    cannot, which systematically overstates paid channels and understates
+    everything else. This skill states the attribution model's limits, seeks
+    incrementality evidence, and reports what the numbers cannot establish.
+  trigger: >-
+    A campaign has run and a decision about continuing, scaling or stopping it
+    must be made.
+  inputs:
+    - name: campaign
+      required: true
+      type: string
+      description: What ran, where, when, and with what spend.
+    - name: objective
+      required: true
+      type: string
+      description: What it was meant to achieve, defined before launch.
+    - name: measurement_setup
+      required: true
+      type: string
+      description: Attribution model, tracking method and known measurement gaps.
+    - name: baseline
+      required: false
+      type: string
+      description: Performance before the campaign, needed to estimate incrementality.
+  prerequisites:
+    - metric-definition
+  tools:
+    - sql-client
+    - dataframe-runtime
+    - chart-renderer
+    - statistics-engine
+    - llm-inference
+  dependencies:
+    - Access to campaign and conversion data at a compatible grain
+  procedure:
+    - step: Restate the pre-launch objective
+      description: >-
+        Report against what the campaign was meant to achieve, not against the
+        metric that happened to perform well.
+    - step: State the attribution model and its blind spots
+      description: >-
+        Name the model, what it over-credits, what it cannot see, and how much of
+        the outcome sits outside it.
+    - step: Estimate incrementality
+      description: >-
+        Use holdouts, geo splits or pre-post comparison with controls to estimate
+        what would have happened anyway.
+    - step: Segment the result
+      description: >-
+        Break performance down by audience, channel and creative to distinguish a
+        working campaign from an averaged one.
+    - step: Check for cannibalisation
+      description: >-
+        Test whether gains in one channel came from another rather than from new
+        demand.
+    - step: Compare against the decision threshold
+      description: >-
+        Judge against the efficiency required for the decision, not against
+        internal or industry benchmarks.
+    - step: State what cannot be concluded
+      description: >-
+        Report explicitly which questions the measurement setup cannot answer.
+  decision_rules:
+    - condition: No holdout or control exists
+      action: Report attributed results as directional and state that incrementality is unknown.
+    - condition: A channel's gain matches another channel's loss
+      action: Report cannibalisation rather than net-new performance.
+    - condition: The campaign is judged against a metric it was not designed for
+      action: Report against the original objective and note the substitution.
+    - condition: Results are within normal variation
+      action: Report as inconclusive rather than as a small effect.
+  outputs:
+    - name: readout
+      type: document
+      description: Performance against objective, incrementality estimate, segment detail, limits.
+    - name: incrementality_estimate
+      type: object
+      description: Estimated causal effect with method and confidence.
+    - name: segment_performance
+      type: json
+      description: Results by audience, channel and creative.
+    - name: measurement_limits
+      type: string[]
+      description: Questions this setup cannot answer, and what would be needed.
+  validation:
+    - check: The attribution model and its blind spots are stated.
+    - check: Incrementality is estimated or explicitly declared unknown.
+    - check: Results are reported against the pre-launch objective.
+    - check: Cannibalisation was tested.
+  failure_modes:
+    - failure: Attributed conversions are reported as caused conversions.
+      mitigation: Separate attributed from incremental in every headline figure.
+    - failure: The winning metric is selected after the fact.
+      mitigation: Report against the pre-registered objective first.
+    - failure: Aggregate performance hides one segment carrying the campaign.
+      mitigation: Require segment decomposition before any conclusion.
+    - failure: Channel gains are counted while another channel's decline is ignored.
+      mitigation: Test cannibalisation as a mandatory step.
+  escalation:
+    - condition: Results will be reported externally or to investors.
+      action: Escalate for review of attribution claims before release.
+    - condition: Measurement is broken such that no conclusion is possible.
+      action: Escalate the instrumentation gap rather than reporting unreliable numbers.
+  examples:
+    - title: Readout on a paid acquisition test
+      input:
+        objective: Reduce cost per qualified opportunity below 900
+        measurement_setup: Last-touch attribution, no holdout
+      output:
+        incrementality_estimate: {status: unknown, recommendation: run a geo holdout next cycle}
+        segment_performance: One audience segment accounts for 78 percent of qualified pipeline
+    - title: Readout on a content programme
+      input:
+        objective: Increase share of organic-sourced pipeline
+        baseline: Six months pre-launch
+      output:
+        readout: Organic pipeline share up 6 points; 2 points attributable to cannibalised paid brand terms
+  related_skills:
+    prerequisites: [metric-definition]
+    complementary: [statistical-significance-test, visualization-design, cohort-analysis]
+    successors: [executive-brief]
+    related: [messaging-framework, variance-analysis]
+  complexity: intermediate
+  build_speed: 2
+  shareability: 2
+  maturity: beta
+  tags: [marketing, attribution, incrementality, measurement, reporting]
+  author: Agent Skills Compendium
+  license: CC-BY-4.0
+  risk_level: medium
+  required_permissions: [data.read]
+  restricted_actions: [Reporting attributed results as causal without qualification]
+  created_at: "2025-03-06T00:00:00Z"
+  updated_at: "2025-07-19T00:00:00Z"

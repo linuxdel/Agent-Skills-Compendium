@@ -1,0 +1,135 @@
+skill:
+  id: skl-validate-analysis-assumptions
+  name: Validate Analysis Assumptions
+  slug: validate-analysis-assumptions
+  version: 1.0.0
+  category: data-analysis
+  layer: L1
+  domain: null
+  description: Surface the unstated assumptions an analysis rests on and test which of them would change the conclusion if false.
+  purpose: >-
+    Analyses fail silently because their assumptions were never written down.
+    This skill enumerates them, ranks them by how much the conclusion depends on
+    each, tests the load-bearing ones, and reports the analysis's fragility as an
+    explicit property.
+  trigger: >-
+    Before an analysis is used for a consequential decision, or when a result is
+    surprisingly clean.
+  inputs:
+    - name: analysis
+      required: true
+      type: string
+      description: The analysis, including method, data and conclusion.
+    - name: conclusion
+      required: true
+      type: string
+      description: The specific claim being tested for robustness.
+    - name: decision_stakes
+      required: false
+      type: string
+      description: What the conclusion will be used for, which sets the testing depth.
+  prerequisites: []
+  tools:
+    - dataframe-runtime
+    - statistics-engine
+    - sql-client
+    - llm-inference
+  dependencies:
+    - Access to the underlying data to run sensitivity checks
+  procedure:
+    - step: Enumerate assumptions
+      description: >-
+        List assumptions across four classes — data, measurement, model and
+        inferential — including ones the analyst would consider obvious.
+    - step: Classify by load bearing
+      description: >-
+        For each assumption, state what happens to the conclusion if it is false.
+        Assumptions whose failure changes nothing are set aside.
+    - step: Test the load-bearing ones
+      description: >-
+        Run the cheapest test that could falsify each load-bearing assumption,
+        preferring direct checks over reasoning.
+    - step: Run sensitivity analysis
+      description: >-
+        Vary the assumptions that cannot be directly tested and observe whether
+        the conclusion survives the plausible range.
+    - step: Identify the breaking point
+      description: >-
+        State how far an assumption must be wrong before the conclusion flips.
+        This is more useful than a binary robust verdict.
+    - step: Report fragility
+      description: >-
+        Deliver the conclusion with its dependency structure, so a reader knows
+        which future evidence would overturn it.
+  decision_rules:
+    - condition: A load-bearing assumption cannot be tested with available data
+      action: Report the conclusion as conditional on that assumption and state it in the headline.
+    - condition: The conclusion flips within the plausible range of an assumption
+      action: Downgrade the conclusion to inconclusive rather than reporting it with a caveat.
+    - condition: An assumption is contradicted by the data profile
+      action: Stop and return the analysis for rework.
+    - condition: No assumption is load bearing
+      action: Check whether the conclusion is trivial or whether the enumeration was incomplete.
+  outputs:
+    - name: assumption_register
+      type: json
+      description: Each assumption with class, load-bearing verdict, test performed and result.
+    - name: sensitivity_results
+      type: json
+      description: How the conclusion moves across the plausible range of each untested assumption.
+    - name: breaking_points
+      type: json
+      description: The threshold at which each assumption's failure would flip the conclusion.
+    - name: robustness_verdict
+      type: enum
+      description: Robust, conditional or fragile, with the conditions named.
+  validation:
+    - check: Assumptions are enumerated across all four classes.
+    - check: Every load-bearing assumption has a test or an explicit untestable label.
+    - check: The robustness verdict names its conditions.
+    - check: Breaking points are quantified where the assumption is numeric.
+  failure_modes:
+    - failure: Only the assumptions the analyst already considered are listed.
+      mitigation: Enumerate by class systematically rather than by recall.
+    - failure: A caveat is added and the conclusion is reported unchanged.
+      mitigation: Require the verdict to change when the conclusion flips within the plausible range.
+    - failure: Sensitivity analysis varies only convenient parameters.
+      mitigation: Drive sensitivity from the load-bearing ranking, not from ease of variation.
+    - failure: Untestable assumptions are quietly treated as true.
+      mitigation: Promote untestable load-bearing assumptions into the headline conditions.
+  escalation:
+    - condition: The analysis is fragile and the decision is irreversible.
+      action: Escalate to the decision owner before the analysis is presented.
+    - condition: A contradicted assumption implies published results are wrong.
+      action: Notify the analysis owner and the consumers of the earlier result.
+  examples:
+    - title: Testing a churn model's business conclusion
+      input:
+        conclusion: Discounting at-risk accounts reduces churn
+        decision_stakes: Programme worth two million annually
+      output:
+        robustness_verdict: fragile
+        breaking_points: [Conclusion flips if pre-discount churn intent exceeds 30 percent]
+    - title: Testing a capacity forecast
+      input:
+        conclusion: Current cluster capacity is sufficient through Q4
+      output:
+        robustness_verdict: conditional
+        conditions: [Traffic growth stays below 6 percent monthly, No change to per-request memory]
+  related_skills:
+    prerequisites: []
+    complementary: [dataset-profiling, statistical-significance-test]
+    successors: [statistical-significance-test, risk-weighted-recommendation]
+    related: [structured-critique, scenario-planning]
+  complexity: advanced
+  build_speed: 2
+  shareability: 2
+  maturity: beta
+  tags: [assumptions, robustness, sensitivity, rigor, analysis]
+  author: Agent Skills Compendium
+  license: CC-BY-4.0
+  risk_level: medium
+  required_permissions: [data.read]
+  restricted_actions: [Downgrading a fragility finding to a footnote]
+  created_at: "2025-02-14T00:00:00Z"
+  updated_at: "2025-07-27T00:00:00Z"

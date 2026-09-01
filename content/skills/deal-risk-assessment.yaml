@@ -1,0 +1,152 @@
+skill:
+  id: skl-deal-risk-assessment
+  name: Deal Risk Assessment
+  slug: deal-risk-assessment
+  version: 1.0.0
+  category: sales-gtm
+  layer: L1
+  domain: revenue
+  description: Assess whether an opportunity will close, based on evidence of the buyer's process rather than on seller optimism.
+  purpose: >-
+    Forecasts fail because deal health is judged by seller sentiment and activity
+    volume. This skill scores against verifiable buyer-side evidence — an
+    identified economic buyer, a documented problem, a known process, a real
+    compelling event — and names the single most likely reason the deal dies.
+  trigger: >-
+    Before a forecast commitment, at a stage transition, or when a deal has been
+    active longer than the normal cycle.
+  inputs:
+    - name: opportunity
+      required: true
+      type: string
+      description: The deal, its stage, value and expected close date.
+    - name: activity_history
+      required: true
+      type: string
+      description: Meetings, participants, materials exchanged and buyer-initiated actions.
+    - name: buyer_evidence
+      required: true
+      type: string
+      description: What the buyer has actually done or committed to, distinct from what they have said.
+    - name: comparable_deals
+      required: false
+      type: string
+      description: Historical deals of similar shape and their outcomes.
+  prerequisites:
+    - account-research
+  tools:
+    - crm
+    - llm-inference
+    - dataframe-runtime
+    - document-generator
+  dependencies:
+    - CRM records complete enough to distinguish buyer actions from seller activity
+  procedure:
+    - step: Separate buyer actions from seller activity
+      description: >-
+        Count only what the buyer did — attended, introduced, provided data,
+        scheduled. Seller activity measures effort, not progress.
+    - step: Verify the economic buyer
+      description: >-
+        Confirm the person who can authorise the spend has been met, not merely
+        named. This is the most common silent gap.
+    - step: Verify the problem and its cost
+      description: >-
+        Check that the buyer has articulated the problem and its cost in their own
+        words. A problem only the seller can describe is not yet a deal.
+    - step: Verify the compelling event
+      description: >-
+        Establish what forces a decision by a date, and check it is the buyer's
+        deadline rather than the seller's quarter.
+    - step: Map the buying process
+      description: >-
+        Establish the actual steps to signature — security review, procurement,
+        legal, board — and whether the timeline accommodates them.
+    - step: Identify the alternative
+      description: >-
+        Determine what happens if they do nothing, since doing nothing wins most
+        contested deals.
+    - step: Name the likely death cause
+      description: >-
+        State the single most probable reason this deal does not close, and what
+        would remove it.
+    - step: Score and recommend
+      description: >-
+        Produce a risk score with the missing evidence named and the next action
+        that would resolve the largest uncertainty.
+  decision_rules:
+    - condition: The economic buyer has not been met
+      action: Cap confidence regardless of other signals and make meeting them the next action.
+    - condition: The compelling event is the seller's quarter end
+      action: Treat the deal as having no compelling event.
+    - condition: All recent activity is seller-initiated
+      action: Downgrade the deal; buyer-initiated actions are the reliable signal.
+    - condition: Procurement and security review are unscheduled inside the close window
+      action: Move the expected close date rather than reporting the current one.
+    - condition: The buyer cannot state the cost of the problem
+      action: Return the deal to discovery rather than progressing the stage.
+  outputs:
+    - name: risk_assessment
+      type: document
+      description: Evidence-based health assessment with the likely death cause named.
+    - name: evidence_gaps
+      type: json
+      description: Missing buyer-side evidence, ranked by how much it changes the outcome.
+    - name: revised_forecast
+      type: object
+      description: Probability and realistic close date derived from the process map.
+    - name: next_action
+      type: string
+      description: The single action that would resolve the largest uncertainty.
+  validation:
+    - check: Buyer actions are counted separately from seller activity.
+    - check: Economic buyer status is verified as met, not merely named.
+    - check: The compelling event is buyer-side and dated.
+    - check: The close date accommodates every step in the mapped buying process.
+  failure_modes:
+    - failure: High activity volume is read as high probability.
+      mitigation: Score only buyer-initiated actions.
+    - failure: A champion is mistaken for the economic buyer.
+      mitigation: Require verified authority to spend, not enthusiasm.
+    - failure: The forecast date ignores a six-week security review.
+      mitigation: Map the buying process and derive the date from it.
+    - failure: Doing nothing is not considered as the competitor.
+      mitigation: Require the alternative step, including the status quo.
+  escalation:
+    - condition: The deal requires non-standard contractual or security commitments.
+      action: Escalate to legal and security before the commitment is implied.
+    - condition: Forecast risk materially affects a quarter commitment.
+      action: Escalate to revenue leadership with the evidence gaps rather than adjusting the number quietly.
+  examples:
+    - title: Assessing a late-stage enterprise deal
+      input:
+        opportunity: 340k annual, stage 4, closing this quarter
+        buyer_evidence: Security questionnaire returned; no procurement contact
+      output:
+        likely_death_cause: Procurement cycle unstarted; 6-8 weeks typical at this account
+        revised_forecast: {probability: 0.3, realistic_close: next quarter}
+        next_action: Request procurement introduction from the champion
+    - title: Assessing an early-stage deal with high activity
+      input:
+        opportunity: 60k annual, stage 2
+        activity_history: Nine seller-initiated touches, two buyer replies
+      output:
+        risk_assessment: No verified problem cost; return to discovery
+        evidence_gaps: [Problem cost, Economic buyer, Compelling event]
+  related_skills:
+    prerequisites: [account-research]
+    complementary: [stakeholder-mapping, risk-weighted-recommendation]
+    successors: [executive-brief]
+    related: [cohort-analysis, variance-analysis]
+  complexity: intermediate
+  build_speed: 3
+  shareability: 3
+  maturity: production
+  tags: [sales, forecasting, qualification, risk, pipeline]
+  author: Agent Skills Compendium
+  license: CC-BY-4.0
+  risk_level: medium
+  required_permissions: [crm.read]
+  restricted_actions: [Adjusting forecast records without the deal owner]
+  created_at: "2025-02-27T00:00:00Z"
+  updated_at: "2025-08-03T00:00:00Z"

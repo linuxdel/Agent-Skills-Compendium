@@ -1,0 +1,148 @@
+skill:
+  id: skl-control-evidence-collection
+  name: Control Evidence Collection
+  slug: control-evidence-collection
+  version: 1.0.0
+  category: governance-compliance
+  layer: L4
+  domain: compliance
+  description: Collect evidence that a control operated as designed throughout a period, in a form an auditor will accept without rework.
+  purpose: >-
+    Evidence gathered at audit time proves the control existed on the day it was
+    screenshotted. This skill collects evidence continuously against the control's
+    stated operation, preserves its integrity and completeness, and surfaces
+    operating failures when they happen rather than months later.
+  trigger: >-
+    A control is in scope for an audit, certification or internal assurance cycle.
+  inputs:
+    - name: control
+      required: true
+      type: string
+      description: The control statement, its owner and its stated operating frequency.
+    - name: period
+      required: true
+      type: string
+      description: The period over which operation must be evidenced.
+    - name: framework
+      required: true
+      type: string
+      description: The framework or standard, which determines acceptable evidence forms.
+    - name: systems
+      required: false
+      type: string[]
+      description: Systems where evidence originates.
+  prerequisites: []
+  tools:
+    - log-store
+    - audit-log
+    - http-client
+    - file-system
+    - document-generator
+    - policy-engine
+  dependencies:
+    - Read access to the systems where the control operates
+  procedure:
+    - step: Decompose the control into observable operations
+      description: >-
+        Translate the control statement into specific events that must be
+        observable each time it operates.
+    - step: Identify authoritative evidence sources
+      description: >-
+        Prefer system-generated records over human attestations, and record why
+        each source is authoritative.
+    - step: Establish population and completeness
+      description: >-
+        Define the full population of control operations for the period and how
+        completeness is demonstrated; sampling from an unknown population proves nothing.
+    - step: Collect with integrity
+      description: >-
+        Capture evidence with timestamps, source references and integrity
+        protection so it cannot be questioned later.
+    - step: Test operation, not just design
+      description: >-
+        Verify the control actually operated on each occasion required, not that
+        it is documented to operate.
+    - step: Record exceptions as they occur
+      description: >-
+        Log every instance where the control did not operate, with cause and
+        remediation, rather than suppressing them.
+    - step: Package for audit
+      description: >-
+        Assemble evidence, population, completeness demonstration and exception
+        log into a package an auditor can assess independently.
+  decision_rules:
+    - condition: Evidence is a screenshot taken at audit time
+      action: Replace it with system-generated evidence covering the period; point-in-time evidence does not prove operation.
+    - condition: The population cannot be established
+      action: Report a completeness gap rather than sampling from an unknown population.
+    - condition: The control did not operate on an occasion
+      action: Record the exception with cause; do not omit it or backfill evidence.
+    - condition: Evidence would require access beyond the collector's authorisation
+      action: Escalate the access design rather than obtaining evidence informally.
+  outputs:
+    - name: evidence_package
+      type: document
+      description: Evidence, population, completeness demonstration and integrity references.
+    - name: exception_log
+      type: json
+      description: Occasions the control did not operate, with cause and remediation status.
+    - name: completeness_report
+      type: object
+      description: How the population was established and demonstrated complete.
+    - name: control_health
+      type: enum
+      description: Operating effectively, operating with exceptions, or not operating.
+  validation:
+    - check: Evidence covers the whole period, not a point in time.
+    - check: The population is defined and its completeness demonstrated.
+    - check: Every exception is recorded with cause and remediation.
+    - check: Evidence sources are system-generated wherever such records exist.
+  failure_modes:
+    - failure: Screenshots taken during audit week are presented as period evidence.
+      mitigation: Require continuous, system-generated evidence across the period.
+    - failure: Sampling is performed against a population nobody established.
+      mitigation: Demonstrate completeness before sampling.
+    - failure: Exceptions are quietly remediated and not recorded.
+      mitigation: Log exceptions as they occur with an immutable trail.
+    - failure: The control is documented and never actually operated.
+      mitigation: Test operation rather than design.
+  escalation:
+    - condition: The control did not operate for a material portion of the period.
+      action: Escalate to the control owner and compliance immediately; this is a reportable deficiency.
+    - condition: Evidence appears to have been altered.
+      action: Stop, preserve the material and escalate to audit.
+    - condition: A control cannot be evidenced at all.
+      action: Escalate as a design deficiency rather than reporting effectiveness.
+  examples:
+    - title: Evidencing access review operation
+      input:
+        control: Quarterly access review of production systems by system owners
+        period: 2025 H1
+        framework: SOC 2
+      output:
+        control_health: operating with exceptions
+        exception_log: [Q1 review for two systems completed 19 days late]
+    - title: Evidencing change approval
+      input:
+        control: All production changes approved by a second engineer
+        systems: [Version control, Deployment system]
+      output:
+        completeness_report: Population derived from deployment records, 1,412 changes
+        control_health: operating effectively
+  related_skills:
+    prerequisites: []
+    complementary: [regulatory-change-impact, account-reconciliation, process-capture]
+    successors: [regulatory-change-impact]
+    related: [vendor-evaluation, agent-telemetry-instrumentation]
+  complexity: advanced
+  build_speed: 2
+  shareability: 2
+  maturity: production
+  tags: [compliance, controls, evidence, audit, assurance]
+  author: Agent Skills Compendium
+  license: CC-BY-4.0
+  risk_level: high
+  required_permissions: [logs.read, audit.read]
+  restricted_actions: [Creating evidence retrospectively, Modifying audit records, Omitting exceptions]
+  created_at: "2025-02-28T00:00:00Z"
+  updated_at: "2025-08-08T00:00:00Z"

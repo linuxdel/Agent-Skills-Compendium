@@ -1,0 +1,140 @@
+skill:
+  id: skl-document-restructuring
+  name: Document Restructuring
+  slug: document-restructuring
+  version: 1.0.0
+  category: writing-communication
+  layer: L3
+  domain: null
+  description: Rebuild a document's structure around its actual argument, so that reading order matches reasoning order.
+  purpose: >-
+    Long documents usually fail structurally rather than sententially: the
+    argument exists but is distributed across sections that grew by accretion.
+    This skill recovers the latent argument, chooses a structure that carries it,
+    and rebuilds the document without losing content.
+  trigger: >-
+    A document is complete in content but readers cannot follow it, cannot find
+    things in it, or reach different conclusions from it.
+  inputs:
+    - name: document
+      required: true
+      type: string
+      description: The full document, including its existing headings.
+    - name: reading_mode
+      required: true
+      type: string
+      description: How it will be used — read once end to end, skimmed for a decision, or consulted as reference.
+    - name: primary_question
+      required: false
+      type: string
+      description: The question the reader arrives with, which the structure should answer earliest.
+  prerequisites: []
+  tools:
+    - llm-inference
+    - document-parser
+    - document-generator
+  dependencies: []
+  procedure:
+    - step: Extract the latent argument
+      description: >-
+        Reconstruct the chain of claims the document is actually making,
+        independent of its current section order.
+    - step: Classify every block
+      description: >-
+        Label each paragraph as claim, evidence, mechanism, caveat, background or
+        residue. Residue is content that serves no claim.
+    - step: Choose a structure for the reading mode
+      description: >-
+        Sequential reading takes an argument structure; decision skimming takes a
+        conclusion-first structure; reference use takes a lookup structure.
+      
+    - step: Rebuild the skeleton
+      description: >-
+        Write the new heading tree and assign every classified block to a
+        position before moving any text.
+    - step: Reassign content losslessly
+      description: >-
+        Move blocks into the skeleton. Track every block so none is dropped
+        silently during the move.
+    - step: Repair transitions
+      description: >-
+        Rewrite only the connective tissue between relocated blocks; leave
+        substantive text untouched.
+    - step: Report residue
+      description: >-
+        Surface blocks that serve no claim and let the author decide whether to
+        cut them rather than cutting unilaterally.
+  decision_rules:
+    - condition: The document has no recoverable argument
+      action: Report that it is a collection rather than a document, and propose a reference structure instead.
+    - condition: Two sections make the same claim with different evidence
+      action: Merge them and preserve both evidence sets.
+    - condition: A block serves no claim
+      action: Move it to residue for author review; never delete it during restructuring.
+    - condition: The reader's primary question is answered after page two
+      action: Restructure conclusion-first regardless of the original genre.
+  outputs:
+    - name: restructured_document
+      type: document
+      description: The rebuilt document with a new heading tree.
+    - name: block_map
+      type: json
+      description: Every original block mapped to its new location or to residue.
+    - name: residue
+      type: string[]
+      description: Content that serves no claim, returned for author decision.
+    - name: argument_outline
+      type: json
+      description: The recovered claim chain the new structure carries.
+  validation:
+    - check: Every original block appears in the block map, relocated or in residue.
+    - check: No substantive sentence was rewritten, only transitions.
+    - check: The structure matches the declared reading mode.
+    - check: The primary question is answered within the first section.
+  failure_modes:
+    - failure: Content is silently lost during the move.
+      mitigation: Build the block map before moving anything and validate completeness after.
+    - failure: Restructuring becomes rewriting and the author's voice disappears.
+      mitigation: Restrict edits to transitions; substantive text is moved, not rewritten.
+    - failure: A generic template is imposed that does not fit the argument.
+      mitigation: Derive the skeleton from the recovered argument, not from a document type.
+    - failure: Useful tangents are deleted as digressions.
+      mitigation: Route them to residue for the author rather than removing them.
+  escalation:
+    - condition: Restructuring reveals that the document's conclusion is unsupported.
+      action: Stop and report the gap to the author before delivering a cleaner version of a broken argument.
+    - condition: The document is a controlled or version-governed record.
+      action: Escalate to the document owner before altering structure.
+  examples:
+    - title: Restructuring a 40-page architecture review
+      input:
+        document: Accreted architecture review with 11 top-level sections
+        reading_mode: decision skimming
+      output:
+        new_sections: 5
+        residue_blocks: 7
+        primary_question_answered_in: Section 1
+    - title: Restructuring an onboarding guide into reference form
+      input:
+        document: Narrative onboarding walkthrough
+        reading_mode: reference
+      output:
+        new_sections: 9
+        block_map_entries: 142
+  related_skills:
+    prerequisites: []
+    complementary: [structured-critique, audience-adaptive-rewrite]
+    successors: [executive-brief]
+    related: [taxonomy-design, knowledge-synthesis-brief]
+  complexity: intermediate
+  build_speed: 2
+  shareability: 2
+  maturity: beta
+  tags: [writing, structure, editing, documents, clarity]
+  author: Agent Skills Compendium
+  license: CC-BY-4.0
+  risk_level: low
+  required_permissions: [document.write]
+  restricted_actions: [Deleting content without author review]
+  created_at: "2025-02-20T00:00:00Z"
+  updated_at: "2025-07-09T00:00:00Z"

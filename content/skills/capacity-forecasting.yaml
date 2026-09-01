@@ -1,0 +1,150 @@
+skill:
+  id: skl-capacity-forecasting
+  name: Capacity Forecasting
+  slug: capacity-forecasting
+  version: 1.0.0
+  category: devops-infrastructure
+  layer: L4
+  domain: operations
+  description: Project when a system will run out of headroom, based on the resource that actually binds rather than on average utilisation.
+  purpose: >-
+    Capacity planning on average utilisation misses the constraint that actually
+    fails first — a connection limit, a quota, a single-threaded component, a
+    tail-latency cliff. This skill identifies the binding constraint, projects
+    against realistic demand, and states when action must begin, not when the
+    limit is reached.
+  trigger: >-
+    Growth is expected, a limit has been approached, or a budget or procurement
+    cycle requires a capacity position.
+  inputs:
+    - name: system
+      required: true
+      type: string
+      description: The system or service being forecast, and its architecture.
+    - name: demand_signal
+      required: true
+      type: string
+      description: Historical load with the granularity to show peaks, not just averages.
+    - name: growth_expectation
+      required: true
+      type: string
+      description: Expected demand change and its basis.
+    - name: lead_times
+      required: false
+      type: string
+      description: How long capacity changes take to procure, provision and validate.
+  prerequisites:
+    - dataset-profiling
+  tools:
+    - observability
+    - dataframe-runtime
+    - statistics-engine
+    - chart-renderer
+    - cloud-api
+    - spreadsheet
+  dependencies:
+    - Telemetry at peak granularity, not daily averages
+  procedure:
+    - step: Identify the binding constraint
+      description: >-
+        Determine which resource saturates first — CPU, memory, connections,
+        IOPS, quota, a lock, a single-threaded stage — rather than assuming it is
+        the one that is monitored.
+    - step: Measure at peak, not at average
+      description: >-
+        Model against peak load with realistic concurrency, since systems fail at
+        peaks and averages conceal them.
+    - step: Establish the usable ceiling
+      description: >-
+        Determine the point at which performance degrades unacceptably, which is
+        usually well below the theoretical limit.
+    - step: Model demand realistically
+      description: >-
+        Project growth including seasonality, launches and known events, and state
+        the assumption behind the growth rate.
+    - step: Compute time to constraint
+      description: >-
+        Project when demand meets the usable ceiling, with a range reflecting
+        demand uncertainty.
+    - step: Subtract lead time
+      description: >-
+        Report the action date, not the exhaustion date. The action date is the
+        only one anyone can act on.
+    - step: Identify the next constraint
+      description: >-
+        Determine what binds after the first constraint is relieved, since
+        relieving one frequently exposes another immediately.
+  decision_rules:
+    - condition: Utilisation is measured as an average
+      action: Recompute at peak; average utilisation is not a capacity signal.
+    - condition: The binding constraint is not the monitored resource
+      action: Add instrumentation for the real constraint before forecasting.
+    - condition: The action date has passed
+      action: Escalate immediately rather than reporting a future exhaustion date.
+    - condition: Growth expectation has no stated basis
+      action: Model a range and report sensitivity to the growth rate.
+    - condition: Relieving the constraint exposes another within the horizon
+      action: Report both; a single-constraint plan will not deliver the expected headroom.
+  outputs:
+    - name: forecast
+      type: document
+      description: Binding constraint, usable ceiling, time to constraint, action date.
+    - name: constraint_analysis
+      type: json
+      description: Resources ranked by proximity to their usable ceiling.
+    - name: scenario_range
+      type: json
+      description: Time to constraint under low, expected and high growth.
+    - name: next_constraint
+      type: object
+      description: What binds after the first constraint is relieved.
+  validation:
+    - check: The binding constraint was identified by measurement, not assumption.
+    - check: Modelling uses peak load, not averages.
+    - check: The usable ceiling is below the theoretical limit and justified.
+    - check: The action date accounts for lead times.
+  failure_modes:
+    - failure: Average CPU looks healthy while a connection pool saturates at peak.
+      mitigation: Identify the binding constraint by measurement and model at peak.
+    - failure: Capacity is added and the system remains slow because another stage now binds.
+      mitigation: Identify the next constraint before committing the change.
+    - failure: The forecast reports an exhaustion date and procurement cannot act in time.
+      mitigation: Report the action date after subtracting lead times.
+    - failure: A single growth number hides an order-of-magnitude uncertainty.
+      mitigation: Report a scenario range and its sensitivity.
+  escalation:
+    - condition: The action date is within the lead time or already past.
+      action: Escalate immediately with mitigation options rather than filing a forecast.
+    - condition: The constraint is a third-party quota with an approval lead time.
+      action: Escalate to the vendor relationship owner early.
+  examples:
+    - title: Forecasting database capacity
+      input:
+        system: Primary transactional database
+        growth_expectation: 6 percent monthly, based on trailing six months
+      output:
+        constraint_analysis: Connection limit binds before CPU or storage
+        forecast: {action_date: 2025-10-12, exhaustion_range: 2025-11-20 to 2026-01-15}
+    - title: Forecasting queue processing headroom
+      input:
+        system: Event processing pipeline
+        lead_times: 3 weeks for quota increase
+      output:
+        next_constraint: Downstream API rate limit binds two weeks after workers scale
+  related_skills:
+    prerequisites: [dataset-profiling]
+    complementary: [variance-analysis, scenario-planning]
+    successors: [infrastructure-change-review, risk-weighted-recommendation]
+    related: [production-incident-diagnosis, metric-definition]
+  complexity: advanced
+  build_speed: 2
+  shareability: 2
+  maturity: beta
+  tags: [capacity, forecasting, constraints, operations, planning]
+  author: Agent Skills Compendium
+  license: CC-BY-4.0
+  risk_level: medium
+  required_permissions: [observability.read, cloud.read]
+  restricted_actions: [Provisioning infrastructure, Changing quotas]
+  created_at: "2025-03-20T00:00:00Z"
+  updated_at: "2025-07-26T00:00:00Z"

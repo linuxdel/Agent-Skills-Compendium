@@ -1,0 +1,144 @@
+skill:
+  id: skl-situation-assessment
+  name: Situation Assessment
+  slug: situation-assessment
+  version: 1.0.0
+  category: executive-intelligence
+  layer: L1
+  domain: null
+  description: Establish what is actually happening in a complex, fast-moving situation, separating fact from report from inference.
+  purpose: >-
+    In a developing situation, leaders receive a mixture of confirmed facts,
+    second-hand reports and inference presented in the same register. This skill
+    separates them, states what is known with what confidence, and identifies the
+    single unknown whose resolution would most change the picture.
+  trigger: >-
+    A situation is developing — an incident, a market event, an organisational
+    disruption — and a leader must act on an incomplete picture.
+  inputs:
+    - name: situation
+      required: true
+      type: string
+      description: What is reportedly happening and when it began.
+    - name: information_sources
+      required: true
+      type: string[]
+      description: Where information is coming from and their vantage points.
+    - name: decision_horizon
+      required: true
+      type: string
+      description: How long before a decision must be made, which sets the achievable confidence.
+    - name: prior_state
+      required: false
+      type: string
+      description: What was true before, against which change is measured.
+  prerequisites:
+    - source-credibility-assessment
+  tools:
+    - llm-inference
+    - web-search
+    - chat-platform
+    - observability
+    - document-generator
+  dependencies:
+    - Access to the reporting channels carrying situation information
+  procedure:
+    - step: Separate fact, report and inference
+      description: >-
+        Sort every statement into directly observed, reported by a named source,
+        or inferred. Mixing these is what produces confident wrong decisions.
+    - step: Establish the timeline
+      description: >-
+        Order events by when they happened rather than by when they were
+        reported, since reporting order distorts causality.
+    - step: Identify vantage points and blind spots
+      description: >-
+        Determine what each source can and cannot see, and what nobody is
+        currently observing.
+    - step: State the confident picture
+      description: >-
+        Describe what is established, at what confidence, and what it implies.
+    - step: Identify the decisive unknown
+      description: >-
+        Name the single unknown whose resolution would most change the
+        assessment, and how it could be resolved within the horizon.
+    - step: Bound the plausible range
+      description: >-
+        State the best and worst credible interpretations of current evidence, so
+        the leader can size the response.
+    - step: Set reassessment triggers
+      description: >-
+        Define what new information would require the assessment to be redone.
+  decision_rules:
+    - condition: A key claim comes from a single unverified source
+      action: Label it as reported and exclude it from the confident picture.
+    - condition: Information is arriving faster than it can be verified
+      action: Report the confident picture as of a stated time rather than continuously revising.
+    - condition: The decisive unknown cannot be resolved within the horizon
+      action: Present the plausible range and recommend a response robust across it.
+    - condition: Reporting is coming only from one vantage point
+      action: State the blind spot explicitly; single-vantage assessments are systematically skewed.
+  outputs:
+    - name: assessment
+      type: document
+      description: Confident picture, plausible range, decisive unknown and confidence levels, as of a stated time.
+    - name: fact_ledger
+      type: json
+      description: Each statement classified as observed, reported or inferred, with source.
+    - name: timeline
+      type: json
+      description: Events in occurrence order with reporting times noted separately.
+    - name: reassessment_triggers
+      type: string[]
+      description: Information that would require redoing the assessment.
+  validation:
+    - check: Every statement in the assessment is classified as observed, reported or inferred.
+    - check: The assessment is timestamped and its currency is stated.
+    - check: Blind spots and single-vantage reporting are named.
+    - check: The decisive unknown is identified with a resolution path.
+  failure_modes:
+    - failure: An early report is treated as fact and drives the response.
+      mitigation: Classify every statement by evidence class before assessing.
+    - failure: Reporting order is mistaken for causal order.
+      mitigation: Build the timeline on occurrence time.
+    - failure: The assessment is continuously revised and nobody can act on it.
+      mitigation: Publish as-of assessments at defined intervals.
+    - failure: One vantage point dominates and a whole dimension is unobserved.
+      mitigation: Map vantage points and state blind spots explicitly.
+  escalation:
+    - condition: The situation involves safety, legal exposure or regulatory notification.
+      action: Escalate to the accountable function immediately, in parallel with assessment.
+    - condition: The plausible worst case is severe and cannot be excluded.
+      action: Escalate the range rather than waiting for confirmation.
+  examples:
+    - title: Assessing a suspected customer data exposure
+      input:
+        situation: Third party reports our data appearing in a public repository
+        decision_horizon: 4 hours to a customer communication decision
+      output:
+        confident_picture: Data matches our schema; source and scope unconfirmed
+        decisive_unknown: Whether the export originated from our systems or a partner
+        escalation: Privacy and legal engaged immediately
+    - title: Assessing a competitor's sudden pricing move
+      input:
+        situation: Reports of aggressive discounting in two accounts
+      output:
+        fact_ledger: 2 observed, 4 reported, 3 inferred
+        plausible_range: Account-specific concession through to a strategic price move
+  related_skills:
+    prerequisites: [source-credibility-assessment]
+    complementary: [evidence-synthesis, stakeholder-mapping, risk-weighted-recommendation]
+    successors: [executive-brief, risk-weighted-recommendation]
+    related: [production-incident-diagnosis, security-alert-investigation]
+  complexity: advanced
+  build_speed: 3
+  shareability: 3
+  maturity: beta
+  tags: [executive, situation, uncertainty, evidence, decision-support]
+  author: Agent Skills Compendium
+  license: CC-BY-4.0
+  risk_level: medium
+  required_permissions: [document.write]
+  restricted_actions: [Presenting inference as observation, Communicating externally about a developing situation]
+  created_at: "2025-04-01T00:00:00Z"
+  updated_at: "2025-08-31T00:00:00Z"

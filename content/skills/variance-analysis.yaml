@@ -1,0 +1,145 @@
+skill:
+  id: skl-variance-analysis
+  name: Variance Analysis
+  slug: variance-analysis
+  version: 1.0.0
+  category: finance-operations
+  layer: L4
+  domain: finance
+  description: Explain the gap between plan and actual by decomposing it into drivers a manager can act on.
+  purpose: >-
+    Variance reporting that lists differences by line item tells nobody what to
+    do. This skill decomposes each variance into price, volume, mix and timing
+    components, separates one-off effects from run-rate changes, and states which
+    variances are controllable.
+  trigger: >-
+    A period has closed and actuals differ from plan or forecast.
+  inputs:
+    - name: plan
+      required: true
+      type: string
+      description: Budget or forecast at the same grain as the actuals.
+    - name: actuals
+      required: true
+      type: string
+      description: Closed period results.
+    - name: period
+      required: true
+      type: string
+      description: The period and whether prior periods were restated.
+    - name: materiality
+      required: false
+      type: string
+      description: Threshold for individual explanation.
+  prerequisites:
+    - dataset-profiling
+    - metric-definition
+  tools:
+    - sql-client
+    - spreadsheet
+    - dataframe-runtime
+    - chart-renderer
+    - document-generator
+  dependencies:
+    - Plan and actuals at a compatible grain and consistent definitions
+  procedure:
+    - step: Verify comparability
+      description: >-
+        Confirm plan and actuals use the same definitions, scope and accounting
+        treatment. Reclassification produces most spurious variances.
+    - step: Rank by materiality and by impact
+      description: >-
+        Order variances by their effect on the outcome, not by line-item size or
+        by report order.
+    - step: Decompose into drivers
+      description: >-
+        Split each material variance into price, volume, mix, rate and timing
+        components so the cause is visible.
+    - step: Separate timing from permanent
+      description: >-
+        Distinguish variances that will reverse next period from those that
+        change the run rate. Managers respond differently to each.
+    - step: Assess controllability
+      description: >-
+        Mark each variance as controllable by the owner, influenced or external.
+        Holding a manager to an external variance destroys the process.
+    - step: Update the forward view
+      description: >-
+        State the implication for the remaining periods, which is the part
+        leadership actually needs.
+    - step: Assign owners and actions
+      description: >-
+        For controllable, permanent variances, name an owner and an action.
+  decision_rules:
+    - condition: Plan and actuals use different definitions
+      action: Restate before analysing; a definitional variance is not a business variance.
+    - condition: A variance is timing only
+      action: Report it separately and exclude it from the run-rate implication.
+    - condition: A variance is external and uncontrollable
+      action: Report it, assign no owner, and reflect it in the forecast instead.
+    - condition: Favourable and unfavourable variances offset within a line
+      action: Decompose them; a small net variance can hide two large opposing drivers.
+  outputs:
+    - name: variance_report
+      type: document
+      description: Material variances with driver decomposition, timing classification and controllability.
+    - name: driver_breakdown
+      type: json
+      description: Price, volume, mix, rate and timing components per variance.
+    - name: forward_implication
+      type: document
+      description: Effect on the remaining periods and the revised expectation.
+    - name: actions
+      type: json
+      description: Owner and action for controllable permanent variances.
+  validation:
+    - check: Plan and actuals were verified as definitionally comparable.
+    - check: Material variances are decomposed into drivers, not just quantified.
+    - check: Timing and permanent variances are separated.
+    - check: Controllability is assigned for every material variance.
+  failure_modes:
+    - failure: A reclassification is reported as a business variance.
+      mitigation: Verify comparability before analysis.
+    - failure: A small net variance hides two large offsetting drivers.
+      mitigation: Decompose within lines rather than reporting net figures.
+    - failure: Managers are held accountable for external variances and stop engaging.
+      mitigation: Assign controllability explicitly.
+    - failure: Timing variances are treated as run-rate changes and the forecast is wrong.
+      mitigation: Separate timing from permanent as a required step.
+  escalation:
+    - condition: A variance suggests a control failure or misstatement.
+      action: Escalate to the controller before publishing the report.
+    - condition: The variance materially changes the full-year outlook.
+      action: Escalate to leadership ahead of the scheduled reporting cycle.
+  examples:
+    - title: Revenue variance for a quarter
+      input:
+        plan: Q2 revenue plan by product line
+        actuals: Q2 closed actuals
+      output:
+        driver_breakdown: {volume: minus 1.2m, price: plus 0.4m, mix: plus 0.9m}
+        forward_implication: Volume shortfall is permanent; mix gain is timing-driven
+    - title: Cloud cost variance
+      input:
+        plan: Infrastructure budget by service
+        materiality: 25k
+      output:
+        variance_report: Two services account for 84 percent of the overrun
+        actions: [Platform lead to right-size the batch cluster by 15 August]
+  related_skills:
+    prerequisites: [dataset-profiling, metric-definition]
+    complementary: [account-reconciliation, metric-anomaly-diagnosis]
+    successors: [executive-brief, capacity-forecasting]
+    related: [campaign-performance-readout, pricing-strategy]
+  complexity: intermediate
+  build_speed: 2
+  shareability: 2
+  maturity: production
+  tags: [finance, variance, planning, drivers, reporting]
+  author: Agent Skills Compendium
+  license: CC-BY-4.0
+  risk_level: medium
+  required_permissions: [finance.read, data.read]
+  restricted_actions: [Adjusting plan figures to reduce reported variance]
+  created_at: "2025-02-13T00:00:00Z"
+  updated_at: "2025-07-29T00:00:00Z"

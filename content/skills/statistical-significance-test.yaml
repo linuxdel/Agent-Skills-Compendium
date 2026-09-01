@@ -1,0 +1,152 @@
+skill:
+  id: skl-statistical-significance-test
+  name: Statistical Significance Test
+  slug: statistical-significance-test
+  version: 1.0.0
+  category: data-analysis
+  layer: L3
+  domain: statistics
+  description: Choose, run and interpret the correct test for a comparison, and report effect size and uncertainty rather than a bare verdict.
+  purpose: >-
+    Significance testing fails in practice through wrong test selection, ignored
+    assumptions, peeking and the conflation of significance with importance.
+    This skill fixes the hypothesis and the test before looking at outcomes, and
+    reports an interval and an effect size alongside any verdict.
+  trigger: >-
+    Two or more groups must be compared and the comparison will drive a decision.
+  inputs:
+    - name: hypothesis
+      required: true
+      type: string
+      description: The comparison, stated before the data is examined.
+    - name: data
+      required: true
+      type: string
+      description: Reference to the observations, including group assignment.
+    - name: outcome_type
+      required: true
+      type: string
+      description: Binary, continuous, count or time-to-event, which constrains test choice.
+    - name: practical_threshold
+      required: false
+      type: string
+      description: The smallest effect that would change the decision.
+    - name: prior_looks
+      required: false
+      type: number
+      description: How many times this data has already been analysed, which affects error control.
+  prerequisites:
+    - dataset-profiling
+    - validate-analysis-assumptions
+  tools:
+    - statistics-engine
+    - dataframe-runtime
+    - chart-renderer
+    - llm-inference
+  dependencies:
+    - A profiled dataset with confirmed grain and group assignment
+  procedure:
+    - step: Fix the hypothesis and threshold first
+      description: >-
+        Record the hypothesis, direction and practical threshold before
+        inspecting outcomes, so the analysis cannot be shaped by the result.
+    - step: Select the test from the data structure
+      description: >-
+        Choose based on outcome type, independence, pairing and distribution, not
+        on convention or familiarity.
+    - step: Check the test's assumptions
+      description: >-
+        Verify independence, variance and distributional assumptions, and switch
+        to a robust or non-parametric alternative when they fail.
+    - step: Assess power
+      description: >-
+        Determine whether the sample can detect the practical threshold. An
+        underpowered null result is uninformative and must be labelled so.
+    - step: Run the test
+      description: >-
+        Compute the statistic, the p-value, the effect size and the confidence
+        interval together.
+    - step: Correct for multiplicity
+      description: >-
+        Apply correction when multiple comparisons or repeated looks occurred,
+        and state the correction used.
+    - step: Interpret against the practical threshold
+      description: >-
+        Report whether the effect is both statistically distinguishable from
+        zero and large enough to matter.
+  decision_rules:
+    - condition: Assumptions of the chosen test fail
+      action: Switch to a robust alternative and report the switch, rather than proceeding with a violated test.
+    - condition: The study is underpowered for the practical threshold
+      action: Report the result as inconclusive rather than as no effect.
+    - condition: Multiple outcomes or repeated looks occurred
+      action: Apply and state a correction; uncorrected results are not reported as significant.
+    - condition: The effect is significant but smaller than the practical threshold
+      action: Report as detectable but not decision-relevant.
+    - condition: The hypothesis was formed after seeing the data
+      action: Label the result exploratory and require confirmation on held-out data.
+  outputs:
+    - name: test_result
+      type: json
+      description: Test used, statistic, p-value, effect size, confidence interval, correction applied.
+    - name: assumption_report
+      type: json
+      description: Each assumption, whether it held, and the action taken when it did not.
+    - name: interpretation
+      type: document
+      description: Plain-language reading against the practical threshold, with explicit limits.
+    - name: power_assessment
+      type: object
+      description: Detectable effect size given the sample, and whether the study was adequately powered.
+  validation:
+    - check: The hypothesis and practical threshold were recorded before outcome inspection.
+    - check: Every assumption of the chosen test has a verdict.
+    - check: Effect size and interval accompany any p-value.
+    - check: Multiplicity correction is applied and named whenever applicable.
+  failure_modes:
+    - failure: A significant p-value on a trivial effect drives a costly change.
+      mitigation: Require a practical threshold and interpret against it.
+    - failure: Repeated peeking manufactures significance.
+      mitigation: Capture prior looks as an input and correct for them.
+    - failure: A null result is reported as evidence of no effect.
+      mitigation: Report power; label underpowered nulls inconclusive.
+    - failure: A parametric test is applied to a heavily skewed outcome.
+      mitigation: Run the assumption check before the test, not after a surprising result.
+  escalation:
+    - condition: Results will support a regulatory, clinical or safety claim.
+      action: Escalate to a qualified statistician before release.
+    - condition: The requester asks to re-run with different subgroups until something is significant.
+      action: Decline, explain the error inflation, and offer a pre-registered alternative.
+  examples:
+    - title: Evaluating an onboarding experiment
+      input:
+        hypothesis: New onboarding increases 7-day activation
+        outcome_type: binary
+        practical_threshold: 2 percentage points
+      output:
+        test_result: {test: two-proportion z, effect: 1.1pp, ci: [-0.3, 2.5], p: 0.11}
+        interpretation: Inconclusive; interval includes the threshold, study underpowered
+    - title: Comparing latency across two infrastructure configurations
+      input:
+        hypothesis: Configuration B reduces p95 latency
+        outcome_type: continuous
+      output:
+        assumption_report: {normality: failed, action: switched to bootstrap}
+        test_result: {effect: -42ms, ci: [-58, -27]}
+  related_skills:
+    prerequisites: [dataset-profiling, validate-analysis-assumptions]
+    complementary: [metric-definition, cohort-analysis]
+    successors: [visualization-design, executive-brief]
+    related: [metric-anomaly-diagnosis, eval-set-design]
+  complexity: expert
+  build_speed: 2
+  shareability: 2
+  maturity: production
+  tags: [statistics, testing, inference, experiments, rigor]
+  author: Agent Skills Compendium
+  license: CC-BY-4.0
+  risk_level: medium
+  required_permissions: [data.read]
+  restricted_actions: [Reporting significance without correction after repeated looks, Presenting exploratory findings as confirmatory]
+  created_at: "2025-02-08T00:00:00Z"
+  updated_at: "2025-08-02T00:00:00Z"

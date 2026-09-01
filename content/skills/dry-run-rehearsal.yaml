@@ -1,0 +1,148 @@
+skill:
+  id: skl-dry-run-rehearsal
+  name: Dry-Run Rehearsal
+  slug: dry-run-rehearsal
+  version: 1.0.0
+  category: workflow-automation
+  layer: L5
+  domain: null
+  description: Execute a change or automation in a mode that produces the full plan and its predicted effects without committing any of them.
+  purpose: >-
+    Irreversible operations are usually reviewed as intentions rather than as
+    effects. This skill produces the complete set of concrete effects a run would
+    have, checks them against expectations, and makes approval a decision about
+    real consequences rather than about a description.
+  trigger: >-
+    Before any bulk, destructive, financial or production-mutating operation runs
+    for the first time or at a new scale.
+  inputs:
+    - name: operation
+      required: true
+      type: string
+      description: The operation to rehearse, with its full parameters.
+    - name: target_scope
+      required: true
+      type: string
+      description: Exactly which records, resources or systems are in scope.
+    - name: expected_effect
+      required: true
+      type: string
+      description: What the operator believes will happen, stated before the rehearsal runs.
+    - name: blast_radius_limit
+      required: false
+      type: string
+      description: The maximum acceptable number or value of affected entities.
+  prerequisites: []
+  tools:
+    - shell
+    - http-client
+    - sql-client
+    - iac-engine
+    - file-system
+    - human-review
+  dependencies:
+    - The operation must support a no-commit mode, or one must be constructed
+  procedure:
+    - step: Establish a genuine no-commit mode
+      description: >-
+        Confirm the dry run cannot mutate state, including through side effects
+        such as notifications, webhooks and third-party calls.
+    - step: Enumerate the target set
+      description: >-
+        Produce the exact list of entities that would be affected, with counts
+        and identifiers, not a description of the selection criteria.
+    - step: Predict effects per entity
+      description: >-
+        Compute the before and after state for each entity, or a representative
+        sample with the full set available.
+    - step: Compare against expectation
+      description: >-
+        Diff the predicted effects against the stated expectation and surface
+        every difference, including unexpected entities in scope.
+    - step: Check the blast radius
+      description: >-
+        Compare affected count and value against the limit, and stop rather than
+        proceeding when it is exceeded.
+    - step: Look for the unexpected
+      description: >-
+        Examine outliers, entities affected by an unintended join, and effects on
+        entities the operator did not mention.
+    - step: Produce the approval package
+      description: >-
+        Deliver the plan, the diff, the blast radius and the rollback procedure
+        as one artifact for a human decision.
+  decision_rules:
+    - condition: The dry run cannot be made side-effect free
+      action: Do not proceed; construct a shadow environment instead.
+    - condition: The affected set differs from the stated expectation
+      action: Stop and resolve the discrepancy before requesting approval.
+    - condition: The blast radius exceeds the limit
+      action: Halt and escalate rather than requesting a limit increase in the same breath.
+    - condition: Rollback is impossible
+      action: Require explicit acknowledgement of irreversibility in the approval package.
+    - condition: The rehearsal is stale relative to the live system
+      action: Re-run immediately before execution; plans expire.
+  outputs:
+    - name: execution_plan
+      type: json
+      description: The exact ordered set of operations that would run.
+    - name: predicted_effects
+      type: json
+      description: Before and after state per affected entity.
+    - name: expectation_diff
+      type: json
+      description: Differences between predicted effects and the operator's stated expectation.
+    - name: approval_package
+      type: document
+      description: Plan, diff, blast radius, irreversibility statement and rollback procedure.
+  validation:
+    - check: The dry run produced no state change, verified rather than assumed.
+    - check: The affected entity set is enumerated with identifiers, not described.
+    - check: Every difference from expectation is surfaced.
+    - check: A rollback procedure exists or irreversibility is explicitly acknowledged.
+  failure_modes:
+    - failure: The dry run sends real notifications or calls a third party.
+      mitigation: Verify side-effect isolation including outbound calls before rehearsing.
+    - failure: The plan is approved on a summary count and affects unintended entities.
+      mitigation: Enumerate identifiers and diff against expectation.
+    - failure: The plan is approved, the system changes, and execution differs from the rehearsal.
+      mitigation: Re-run immediately before execution and compare plans.
+    - failure: A sampled prediction hides a systematic error in the unsampled remainder.
+      mitigation: Make the full set available and check outliers explicitly.
+  escalation:
+    - condition: The rehearsal reveals effects on entities outside the intended scope.
+      action: Halt and escalate to the operation owner before any execution.
+    - condition: The operation is irreversible and affects customer data or funds.
+      action: Require named human approval on the approval package before execution.
+  examples:
+    - title: Rehearsing a bulk customer data migration
+      input:
+        operation: Migrate customers to the new billing schema
+        expected_effect: 14,200 active customers updated, no cancelled accounts touched
+      output:
+        expectation_diff: 61 cancelled accounts in scope due to a join on a nullable field
+        decision: Halted; selection corrected before execution
+    - title: Rehearsing an infrastructure change
+      input:
+        operation: Apply network policy update across production
+        blast_radius_limit: No change to ingress on the payments namespace
+      output:
+        execution_plan: 34 resources changed, 2 replaced
+        approval_package: Includes rollback via prior state file
+  related_skills:
+    prerequisites: []
+    complementary: [idempotent-integration-design, runbook-authoring, infrastructure-change-review]
+    successors: [autonomy-staging, agent-rollback]
+    related: [automation-opportunity-assessment, release-readiness-check]
+  complexity: intermediate
+  build_speed: 3
+  shareability: 3
+  maturity: production
+  tags: [safety, dry-run, rehearsal, blast-radius, approval]
+  author: Agent Skills Compendium
+  license: CC-BY-4.0
+  risk_level: high
+  required_permissions: [system.read, plan.generate]
+  restricted_actions: [Executing the operation, Proceeding when blast radius exceeds the limit]
+  created_at: "2025-01-21T00:00:00Z"
+  updated_at: "2025-08-23T00:00:00Z"

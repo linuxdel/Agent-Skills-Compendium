@@ -1,0 +1,148 @@
+skill:
+  id: skl-cohort-analysis
+  name: Cohort Analysis
+  slug: cohort-analysis
+  version: 1.0.0
+  category: data-analysis
+  layer: L3
+  domain: null
+  description: Compare groups defined by a shared starting condition over time, separating cohort effects from period effects.
+  purpose: >-
+    Aggregate trends hide the fact that the population is being replaced. Cohort
+    analysis holds the entry condition fixed so that changes in behaviour can be
+    distinguished from changes in who is present, and makes survivorship
+    explicit rather than accidental.
+  trigger: >-
+    A trend must be understood in the presence of continuous entry and exit, such
+    as retention, expansion, ramp or lifecycle questions.
+  inputs:
+    - name: cohort_definition
+      required: true
+      type: string
+      description: The shared starting condition and the period granularity.
+    - name: outcome
+      required: true
+      type: string
+      description: The behaviour tracked over cohort age.
+    - name: horizon
+      required: true
+      type: string
+      description: How far to follow each cohort, which determines which cohorts are comparable.
+    - name: segment_dimensions
+      required: false
+      type: string[]
+      description: Dimensions to cut cohorts by, such as channel, plan or region.
+  prerequisites:
+    - dataset-profiling
+    - metric-definition
+  tools:
+    - sql-client
+    - dataframe-runtime
+    - chart-renderer
+    - llm-inference
+  dependencies:
+    - Event data with reliable entry timestamps
+  procedure:
+    - step: Fix the entry event
+      description: >-
+        Define exactly what places an entity in a cohort and at what moment.
+        Ambiguous entry definitions produce uninterpretable curves.
+    - step: Align on cohort age
+      description: >-
+        Convert calendar time to time since entry so cohorts are comparable at
+        equal age rather than at equal date.
+    - step: Enforce equal observation windows
+      description: >-
+        Truncate every cohort to the maximum age observable for the youngest one
+        being compared, or mark incomplete cells explicitly.
+    - step: Separate cohort and period effects
+      description: >-
+        Check whether a change appears at the same age across cohorts, which
+        indicates a lifecycle effect, or at the same date across ages, which
+        indicates a period effect.
+    - step: Test for composition change
+      description: >-
+        Compare cohort composition across entry periods; a retention change is
+        often an acquisition-mix change.
+    - step: Handle survivorship
+      description: >-
+        State whether metrics are computed over survivors or over the original
+        cohort, since the two tell opposite stories.
+    - step: Produce the cohort surface and read
+      description: >-
+        Deliver the cohort table or heatmap with an explicit reading of which
+        effects are cohort, period and age.
+  decision_rules:
+    - condition: The youngest cohort has not reached the horizon
+      action: Mark its later cells incomplete rather than plotting a partial value.
+    - condition: A change appears at the same calendar date across all cohort ages
+      action: Classify it as a period effect and look outside the cohort for the cause.
+    - condition: Acquisition mix changed between entry periods
+      action: Segment before comparing, since aggregate cohort curves are then not comparable.
+    - condition: Metrics are computed over survivors only
+      action: Label them explicitly and provide the original-denominator version alongside.
+  outputs:
+    - name: cohort_table
+      type: json
+      description: Cohort by age matrix with completeness flags per cell.
+    - name: cohort_chart
+      type: chart
+      description: Retention or outcome curves aligned on cohort age.
+    - name: effect_decomposition
+      type: document
+      description: Which observed changes are cohort, period or age effects, with evidence.
+    - name: composition_report
+      type: json
+      description: How cohort composition changed across entry periods.
+  validation:
+    - check: Every cohort is compared over an equal observation window or marked incomplete.
+    - check: The entry event definition is stated precisely.
+    - check: Survivorship treatment is declared for every metric.
+    - check: Period effects are distinguished from cohort effects with evidence.
+  failure_modes:
+    - failure: Incomplete recent cohorts appear to be improving because their late cells are empty.
+      mitigation: Enforce equal windows and never plot partial cells as values.
+    - failure: A retention improvement is really a shift to a higher-intent acquisition channel.
+      mitigation: Run the composition check before interpreting curves.
+    - failure: Survivor-only metrics make a declining product look healthy.
+      mitigation: Declare the denominator and provide both versions.
+    - failure: A macro event affecting all cohorts is read as a lifecycle finding.
+      mitigation: Test for period effects by aligning on calendar date as well as age.
+  escalation:
+    - condition: Cohort results contradict a metric used in external reporting.
+      action: Escalate to the metric owner before publishing the contradiction.
+    - condition: Entry event data is unreliable before a given date.
+      action: Escalate the instrumentation gap and restrict the analysis window.
+  examples:
+    - title: Monthly signup cohorts for subscription retention
+      input:
+        cohort_definition: Month of first paid subscription
+        outcome: Still subscribed
+        horizon: 12 months
+      output:
+        finding: Month-3 drop is stable across cohorts; the aggregate decline is a mix shift
+        effect_decomposition: {cohort: none, period: none, age: month-3 cliff}
+    - title: Feature adoption by onboarding variant
+      input:
+        cohort_definition: Week of account creation, split by onboarding variant
+        outcome: Weekly active use of the collaboration feature
+        horizon: 8 weeks
+      output:
+        finding: Variant B leads at week 1 and converges by week 5
+  related_skills:
+    prerequisites: [dataset-profiling, metric-definition]
+    complementary: [statistical-significance-test, visualization-design]
+    successors: [executive-brief, campaign-performance-readout]
+    related: [metric-anomaly-diagnosis, deal-risk-assessment]
+  complexity: intermediate
+  build_speed: 2
+  shareability: 3
+  maturity: production
+  tags: [cohorts, retention, lifecycle, analytics, survivorship]
+  author: Agent Skills Compendium
+  license: CC-BY-4.0
+  risk_level: low
+  required_permissions: [data.read]
+  restricted_actions: [Plotting incomplete cohort cells as complete values]
+  created_at: "2025-02-01T00:00:00Z"
+  updated_at: "2025-07-24T00:00:00Z"

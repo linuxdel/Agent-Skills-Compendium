@@ -1,0 +1,150 @@
+skill:
+  id: skl-agent-telemetry-instrumentation
+  name: Agent Telemetry Instrumentation
+  slug: agent-telemetry-instrumentation
+  version: 1.0.0
+  category: agent-deployment
+  layer: L5
+  domain: null
+  description: Instrument an agent so that its decisions, not just its outcomes, are observable enough to diagnose and to govern.
+  purpose: >-
+    Standard application telemetry tells you an agent ran and what it returned,
+    which is insufficient to know whether it did the right thing. This skill
+    captures decisions, tool calls, context and cost as a traceable structure,
+    with the controls that keep sensitive content out of the logs.
+  trigger: >-
+    An agent is being deployed, or an existing agent's failures cannot be
+    diagnosed from its current logs.
+  inputs:
+    - name: agent_architecture
+      required: true
+      type: string
+      description: Components, decision points and tool boundaries.
+    - name: questions_to_answer
+      required: true
+      type: string[]
+      description: What the telemetry must let someone determine after the fact.
+    - name: sensitivity_constraints
+      required: true
+      type: string
+      description: What must not be logged, and retention obligations.
+    - name: cost_model
+      required: false
+      type: string
+      description: How cost is incurred, so it can be attributed.
+  prerequisites: []
+  tools:
+    - observability
+    - audit-log
+    - log-store
+    - policy-engine
+    - llm-inference
+  dependencies:
+    - A tracing backend capable of nested spans with structured attributes
+  procedure:
+    - step: Derive the signal set from the questions
+      description: >-
+        Start from what must be answerable — why did it do that, what did it see,
+        what did it cost, did a human approve — and instrument for those.
+    - step: Trace the decision path
+      description: >-
+        Record decision points with the options considered and the basis chosen,
+        not only the action taken.
+    - step: Record tool calls with inputs and outcomes
+      description: >-
+        Capture every tool invocation, its parameters, its result status and its
+        latency, since most failures are at tool boundaries.
+    - step: Capture context provenance
+      description: >-
+        Record what was in context and where it came from, which is what makes
+        injection and retrieval failures diagnosable.
+    - step: Attribute cost per unit of work
+      description: >-
+        Attach token, time and monetary cost to each span so cost regressions are
+        visible before the invoice.
+    - step: Record human interactions
+      description: >-
+        Log every confirmation, approval, rejection and escalation as first-class
+        events for governance and audit.
+    - step: Apply redaction at capture
+      description: >-
+        Filter sensitive content before it is written, not afterwards; logs are
+        copied faster than they are cleaned.
+    - step: Define retention and access
+      description: >-
+        Set retention per signal class and restrict access to traces containing
+        user content.
+  decision_rules:
+    - condition: A failure cannot be diagnosed from the traces
+      action: The instrumentation is inadequate; add the missing signal rather than reproducing manually each time.
+    - condition: A signal would capture credentials or personal data
+      action: Redact at capture; never rely on downstream filtering.
+    - condition: The agent processes untrusted content
+      action: Record content provenance as a first-class attribute for injection analysis.
+    - condition: Cost is not attributable to a unit of work
+      action: Add attribution; unattributed cost cannot be controlled.
+    - condition: Human approvals are not logged
+      action: Add them; governance requires an approval record independent of the agent's account.
+  outputs:
+    - name: instrumentation_spec
+      type: document
+      description: Signals, spans, attributes and the questions each supports.
+    - name: trace_schema
+      type: json
+      description: Structured span and attribute definitions.
+    - name: redaction_policy
+      type: document
+      description: What is filtered at capture and how it is verified.
+    - name: retention_policy
+      type: json
+      description: Retention and access controls per signal class.
+  validation:
+    - check: Every stated question is answerable from the traces alone.
+    - check: Decision points record the basis, not only the outcome.
+    - check: Redaction happens at capture and has been verified against real traffic.
+    - check: Human approvals and escalations are logged as independent events.
+    - check: Cost is attributable to a unit of work.
+  failure_modes:
+    - failure: Logs show what the agent did but not why, and failures cannot be diagnosed.
+      mitigation: Instrument decision points with options and basis.
+    - failure: User content lands in logs and creates a privacy exposure.
+      mitigation: Redact at capture and verify against real traffic.
+    - failure: Cost is discovered at the invoice rather than in the trace.
+      mitigation: Attribute cost per span.
+    - failure: An injection incident cannot be reconstructed because context provenance was not recorded.
+      mitigation: Record provenance for every context element.
+  escalation:
+    - condition: Existing logs are found to contain sensitive content.
+      action: Escalate to privacy immediately and restrict access before remediation.
+    - condition: Telemetry reveals actions outside the agent's authorised scope.
+      action: Escalate as a control failure, not as a logging finding.
+  examples:
+    - title: Instrumenting a research agent
+      input:
+        questions_to_answer: [Why did it cite this source, What did it read, What did it cost]
+      output:
+        trace_schema: Nested spans per sub-question with source provenance attributes
+        redaction_policy: Retrieved page bodies stored by hash and URL, not verbatim
+    - title: Instrumenting a customer-facing agent
+      input:
+        sensitivity_constraints: No customer message content in traces
+      output:
+        instrumentation_spec: Decision basis and category logged; content referenced by ticket id
+        retention_policy: {decision_traces: 90 days, approvals: 7 years}
+  related_skills:
+    prerequisites: []
+    complementary: [autonomy-staging, failure-taxonomy, agent-rollback]
+    successors: [failure-taxonomy, agent-rollback]
+    related: [control-evidence-collection, metric-definition]
+  complexity: advanced
+  build_speed: 2
+  shareability: 3
+  maturity: beta
+  tags: [deployment, telemetry, observability, governance, agents]
+  author: Agent Skills Compendium
+  license: CC-BY-4.0
+  risk_level: medium
+  required_permissions: [observability.write, policy.read]
+  restricted_actions: [Logging credentials or personal data, Retaining traces beyond the stated policy]
+  created_at: "2025-04-19T00:00:00Z"
+  updated_at: "2025-08-23T00:00:00Z"

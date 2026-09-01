@@ -1,0 +1,151 @@
+skill:
+  id: skl-tool-permission-scoping
+  name: Tool Permission Scoping
+  slug: tool-permission-scoping
+  version: 1.0.0
+  category: agent-security
+  layer: L5
+  domain: security
+  description: Grant an agent the narrowest tool and permission set that lets it complete its task, and bound the damage of any single call.
+  purpose: >-
+    Agents are usually given the permissions of the person who configured them,
+    so a small failure becomes a large one. This skill derives permissions from
+    the task rather than from convenience, separates read from write, and places
+    limits on scope, rate and value per call.
+  trigger: >-
+    An agent is being given tool access, or an existing agent's permissions have
+    never been reviewed against its actual task.
+  inputs:
+    - name: agent_task
+      required: true
+      type: string
+      description: What the agent must accomplish, which is the only legitimate basis for permissions.
+    - name: available_tools
+      required: true
+      type: string[]
+      description: Tools that could be granted, with their capabilities.
+    - name: data_scope
+      required: true
+      type: string
+      description: What data the task requires, and what it must not reach.
+    - name: autonomy_level
+      required: true
+      type: string
+      description: What the agent may do without confirmation.
+  prerequisites: []
+  tools:
+    - policy-engine
+    - secrets-manager
+    - audit-log
+    - mcp-client
+    - human-review
+  dependencies:
+    - Tools that support scoped credentials rather than all-or-nothing access
+  procedure:
+    - step: Derive required capabilities from the task
+      description: >-
+        List what the task genuinely requires, in capability terms, before
+        looking at what tools are available.
+    - step: Separate read from write
+      description: >-
+        Grant read access broadly where safe and write access narrowly. Most
+        agent tasks are predominantly read.
+    - step: Scope credentials
+      description: >-
+        Issue credentials limited to the specific resources, paths, tables or
+        repositories needed, not to the whole system.
+    - step: Bound each call
+      description: >-
+        Set limits on the number of records, the value, the rate and the blast
+        radius of any single invocation.
+    - step: Classify actions by reversibility
+      description: >-
+        Identify which granted actions are irreversible and require confirmation
+        regardless of autonomy level.
+    - step: Define the confirmation boundary
+      description: >-
+        State exactly which actions require human confirmation, in terms the
+        runtime can enforce rather than the agent can interpret.
+    - step: Make the grant auditable and time-bounded
+      description: >-
+        Log every use, and expire the grant rather than leaving it standing
+        indefinitely.
+    - step: Test the boundary
+      description: >-
+        Attempt out-of-scope actions and confirm they are refused by the system,
+        not merely declined by the agent.
+  decision_rules:
+    - condition: A tool is needed for a minority of the task
+      action: Split that portion into a separately permissioned step rather than widening the grant.
+    - condition: An action is irreversible
+      action: Require confirmation regardless of autonomy level.
+    - condition: A credential cannot be scoped below a whole system
+      action: Treat the grant as high risk, bound it by rate and value, and escalate the design.
+    - condition: The agent processes untrusted content
+      action: Reduce the write and egress permission set; injection converts permissions into exposure.
+    - condition: A permission has not been used
+      action: Remove it at review; unused permissions are pure exposure.
+  outputs:
+    - name: permission_grant
+      type: json
+      description: Tools, scopes, limits, expiry and justification per grant.
+    - name: confirmation_boundary
+      type: json
+      description: Actions requiring human confirmation, enforceable by the runtime.
+    - name: blast_radius_limits
+      type: json
+      description: Per-call limits on records, value, rate and scope.
+    - name: boundary_test_results
+      type: json
+      description: Evidence that out-of-scope actions are refused by the system.
+  validation:
+    - check: Every granted permission maps to a stated task requirement.
+    - check: Irreversible actions require confirmation independent of the agent's own judgement.
+    - check: Credentials are scoped to specific resources rather than to whole systems.
+    - check: Out-of-scope actions were tested and refused by the runtime.
+  failure_modes:
+    - failure: The agent inherits the configurer's full permissions and one error deletes production data.
+      mitigation: Derive permissions from the task and scope credentials to resources.
+    - failure: The agent is trusted to decline dangerous actions and an injection overrides that.
+      mitigation: Enforce the boundary in the runtime, not in the prompt.
+    - failure: A single call affects far more than intended.
+      mitigation: Set per-call blast radius limits.
+    - failure: Permissions granted for one task persist indefinitely.
+      mitigation: Time-bound grants and review unused permissions.
+  escalation:
+    - condition: The task cannot be completed within a safe permission set.
+      action: Escalate the task design rather than widening permissions.
+    - condition: A credential cannot be scoped and the action is irreversible.
+      action: Escalate for a human-executed step instead of an agent-executed one.
+  examples:
+    - title: Scoping a repository maintenance agent
+      input:
+        agent_task: Open pull requests fixing lint violations
+        autonomy_level: May open PRs, may not merge
+      output:
+        permission_grant: Read across repo, write to branches matching a prefix, no merge, no deploy
+        confirmation_boundary: Any change outside the lint scope requires confirmation
+    - title: Scoping a customer support agent
+      input:
+        agent_task: Answer billing questions from account data
+        data_scope: Requesting account only; no cross-account access
+      output:
+        blast_radius_limits: {records_per_call: 1, rate: 60 per hour}
+        boundary_test_results: Cross-account read refused by the credential scope
+  related_skills:
+    prerequisites: []
+    complementary: [prompt-injection-defense, agent-role-design, threat-model-construction]
+    successors: [autonomy-staging, agent-red-teaming]
+    related: [secure-code-review, dry-run-rehearsal]
+  complexity: advanced
+  build_speed: 3
+  shareability: 3
+  maturity: production
+  tags: [security, permissions, least-privilege, blast-radius, agents]
+  author: Agent Skills Compendium
+  license: CC-BY-4.0
+  risk_level: critical
+  required_permissions: [policy.write, secrets.issue]
+  restricted_actions: [Granting unscoped credentials, Relying on the agent to self-limit, Standing grants without expiry]
+  created_at: "2025-02-25T00:00:00Z"
+  updated_at: "2025-08-28T00:00:00Z"

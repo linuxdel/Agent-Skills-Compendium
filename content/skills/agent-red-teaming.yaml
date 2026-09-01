@@ -1,0 +1,154 @@
+skill:
+  id: skl-agent-red-teaming
+  name: Agent Red Teaming
+  slug: agent-red-teaming
+  version: 1.0.0
+  category: agent-security
+  layer: L5
+  domain: security
+  description: Attack an agent system deliberately to find the inputs and situations that make it act against its operator's interest.
+  purpose: >-
+    Evaluation measures whether an agent does the right thing on representative
+    inputs; red teaming measures what an adversary can make it do. This skill
+    attacks the boundary between instruction and data, the permission surface and
+    the escalation path, under authorisation and with the findings routed to fixes.
+  trigger: >-
+    An agent with tools or autonomy is being deployed, materially changed, or
+    given access to untrusted content.
+  inputs:
+    - name: target_system
+      required: true
+      type: string
+      description: The agent, its tools, its permissions and its deployment context.
+    - name: authorisation
+      required: true
+      type: string
+      description: Written scope of what may be tested, by whom and in which environment.
+    - name: threat_model
+      required: false
+      type: string
+      description: Adversaries and objectives, which focus the attack effort.
+    - name: prior_findings
+      required: false
+      type: string[]
+      description: Previously found weaknesses, to verify they remain fixed.
+  prerequisites:
+    - prompt-injection-defense
+    - tool-permission-scoping
+  tools:
+    - eval-harness
+    - llm-inference
+    - http-client
+    - audit-log
+    - sub-agent
+  dependencies:
+    - Written authorisation and an isolated environment with no production side effects
+  procedure:
+    - step: Confirm authorisation and isolation
+      description: >-
+        Verify written scope and that the environment cannot produce real-world
+        side effects. Unauthorised testing is an incident, not a test.
+    - step: Attack the instruction boundary
+      description: >-
+        Attempt to make retrieved content act as instruction, using authority
+        claims, urgency, formatting, encoding and multi-step setups.
+    - step: Attack the permission surface
+      description: >-
+        Attempt actions outside the intended scope, and test whether limits are
+        enforced by the runtime or only by the agent's judgement.
+    - step: Attack via indirect paths
+      description: >-
+        Plant adversarial content where the agent will retrieve it later —
+        documents, tickets, code comments, sub-agent output — rather than
+        supplying it directly.
+    - step: Attack the escalation path
+      description: >-
+        Test whether the agent can be induced to skip confirmation, misreport
+        what it did, or escalate to the wrong party.
+    - step: Attack under load and length
+      description: >-
+        Test behaviour in long sessions, after context compaction, and under
+        conflicting accumulated instructions, where boundaries commonly weaken.
+    - step: Record reproducible findings
+      description: >-
+        Capture each success with an exact reproduction, the capability abused
+        and the impact achieved.
+    - step: Route findings to fixes
+      description: >-
+        Map each finding to a structural fix — permission, architecture, runtime
+        enforcement — rather than to a prompt patch.
+  decision_rules:
+    - condition: Written authorisation is absent or ambiguous
+      action: Do not test; obtain explicit scope first.
+    - condition: A boundary is enforced only by the agent's judgement
+      action: Report it as a critical finding; prompt-level boundaries are bypassable by construction.
+    - condition: An attack succeeds in an isolated environment
+      action: Assume it succeeds in production and prioritise accordingly.
+    - condition: A finding is fixed by a prompt change alone
+      action: Treat it as unfixed and require a structural control.
+    - condition: Testing risks affecting real systems or people
+      action: Stop; red teaming never runs against production without explicit, separate authorisation.
+  outputs:
+    - name: findings
+      type: json
+      description: Each successful attack with reproduction, capability abused and impact.
+    - name: coverage_report
+      type: document
+      description: Attack classes attempted, including those that failed, and what was not tested.
+    - name: fix_recommendations
+      type: json
+      description: Structural controls per finding, with the test that would confirm the fix.
+    - name: residual_risk
+      type: document
+      description: What remains exploitable and what compensating controls apply.
+  validation:
+    - check: Written authorisation covers everything that was tested.
+    - check: Every finding has an exact reproduction.
+    - check: Fixes proposed are structural rather than prompt-level.
+    - check: The coverage report states what was not tested.
+  failure_modes:
+    - failure: Testing runs against production and causes a real incident.
+      mitigation: Confirm isolation and authorisation before any attack.
+    - failure: Only direct prompt attacks are tried and indirect injection paths are missed.
+      mitigation: Plant adversarial content in retrieval paths the agent uses.
+    - failure: Findings are patched in the prompt and reappear in a different phrasing.
+      mitigation: Require structural fixes and retest with variants.
+    - failure: A clean report is read as security, when coverage was narrow.
+      mitigation: Report coverage and untested classes explicitly.
+  escalation:
+    - condition: A finding is exploitable in a deployed system.
+      action: Escalate immediately to the system owner and security; do not wait for the report.
+    - condition: A finding enables data exfiltration or unauthorised financial action.
+      action: Escalate as a security incident and recommend suspending the capability.
+    - condition: Testing produces a real-world side effect.
+      action: Stop, disclose immediately and treat it as an incident.
+  examples:
+    - title: Red teaming a document-processing agent
+      input:
+        authorisation: Written scope covering the staging environment for two weeks
+      output:
+        findings: [Indirect injection via a PDF comment caused an out-of-scope API call]
+        fix_recommendations: [Enforce the API allowlist in the runtime rather than the prompt]
+    - title: Red teaming a code-change agent
+      input:
+        threat_model: Adversary who can open issues in a public repository
+      output:
+        findings: [Issue body induced the agent to widen a CI permission]
+        residual_risk: Compensating control is human review at merge; unreviewed paths remain a risk
+  related_skills:
+    prerequisites: [prompt-injection-defense, tool-permission-scoping]
+    complementary: [threat-model-construction, failure-taxonomy]
+    successors: [autonomy-staging, agent-rollback]
+    related: [vulnerability-triage, secure-code-review]
+  complexity: expert
+  build_speed: 2
+  shareability: 3
+  maturity: beta
+  tags: [security, red-team, adversarial, injection, agents]
+  author: Agent Skills Compendium
+  license: CC-BY-4.0
+  risk_level: critical
+  required_permissions: [test.environment, eval.write]
+  restricted_actions: [Testing without written authorisation, Testing against production, Retaining exploit material outside the report]
+  created_at: "2025-04-15T00:00:00Z"
+  updated_at: "2025-08-27T00:00:00Z"

@@ -1,0 +1,152 @@
+skill:
+  id: skl-manipulation-task-planning
+  name: Manipulation Task Planning
+  slug: manipulation-task-planning
+  version: 1.0.0
+  category: physical-ai-robotics
+  layer: L4
+  domain: robotics
+  description: Plan a physical manipulation sequence that respects safety envelopes, remains recoverable at each step, and fails safe.
+  purpose: >-
+    Manipulation planning that optimises only for task success produces motions
+    that are efficient and unrecoverable. This skill plans within a safety
+    envelope, requires each step to have a defined recovery, and verifies the
+    trajectory against the perceived world including its uncertainty.
+  trigger: >-
+    A physical manipulation task must be executed on real hardware.
+  inputs:
+    - name: task_goal
+      required: true
+      type: string
+      description: The desired end state in physical terms, with tolerances.
+    - name: world_model
+      required: true
+      type: string
+      description: The grounded scene including uncertainty and unknown space.
+    - name: robot_capabilities
+      required: true
+      type: string
+      description: Kinematics, payload, force limits, gripper characteristics and workspace bounds.
+    - name: safety_envelope
+      required: true
+      type: string
+      description: Speed, force and zone constraints, including human-present conditions.
+  prerequisites:
+    - perception-grounding
+  tools:
+    - motion-planner
+    - robot-runtime
+    - simulator
+    - sensor-stream
+    - human-review
+  dependencies:
+    - A grounded world model that met its sufficiency verdict
+  procedure:
+    - step: Verify perception sufficiency
+      description: >-
+        Confirm the world model met the task tolerance. Planning against
+        insufficient perception produces confident, wrong motion.
+    - step: Decompose into recoverable steps
+      description: >-
+        Break the task into steps each of which has a defined recovery from
+        failure, rather than into steps that are merely convenient.
+    - step: Plan within the safety envelope
+      description: >-
+        Generate trajectories that respect speed, force and zone constraints as
+        hard limits, not as objectives to be traded off.
+    - step: Inflate obstacles by uncertainty
+      description: >-
+        Expand collision geometry by the pose uncertainty of each object, and
+        treat unknown space as occupied.
+    - step: Verify in simulation
+      description: >-
+        Execute the plan against the world model in simulation, including
+        perturbations within the uncertainty bounds.
+    - step: Define per-step success criteria
+      description: >-
+        State what sensor observation confirms each step succeeded, so failure is
+        detected at the step rather than at the end.
+    - step: Define abort and recovery
+      description: >-
+        For each step, define the abort condition and the state the robot moves to
+        on abort.
+    - step: Stage execution with monitoring
+      description: >-
+        Execute step by step with the success criteria checked before proceeding,
+        at reduced speed on the first execution.
+  decision_rules:
+    - condition: Perception did not meet task tolerance
+      action: Do not plan; return to perception or escalate.
+    - condition: A step has no defined recovery
+      action: Redesign the decomposition; irrecoverable intermediate states are not acceptable.
+    - condition: The plan requires exceeding the safety envelope
+      action: Report the task as infeasible under the envelope rather than relaxing it.
+    - condition: A human enters the workspace
+      action: Halt to the safe state immediately and require explicit resumption.
+    - condition: A step's success criterion is not observable
+      action: Add sensing or redesign the step; unverifiable steps hide failures until later.
+  outputs:
+    - name: motion_plan
+      type: object
+      description: Ordered steps with trajectories, force limits and timing.
+    - name: recovery_plan
+      type: json
+      description: Abort condition, recovery action and resulting state per step.
+    - name: simulation_evidence
+      type: json
+      description: Simulation results including perturbation tests within uncertainty bounds.
+    - name: success_criteria
+      type: json
+      description: Observable confirmation per step.
+  validation:
+    - check: The plan respects every safety envelope constraint as a hard limit.
+    - check: Obstacle geometry is inflated by perception uncertainty and unknown space is treated as occupied.
+    - check: Every step has an observable success criterion and a defined recovery.
+    - check: Simulation was run including perturbations within the uncertainty bounds.
+  failure_modes:
+    - failure: A collision-free plan in the nominal world collides under real pose error.
+      mitigation: Inflate obstacles by uncertainty and test perturbations in simulation.
+    - failure: The robot completes a step it did not actually achieve and proceeds.
+      mitigation: Require observable per-step success criteria before continuing.
+    - failure: An abort leaves the object in an unrecoverable position.
+      mitigation: Define the resulting state of every abort and require recoverability.
+    - failure: Speed limits are relaxed to meet a cycle-time target.
+      mitigation: Treat the safety envelope as a hard constraint and report infeasibility instead.
+  escalation:
+    - condition: The task is infeasible within the safety envelope.
+      action: Escalate to a human; do not relax the envelope autonomously.
+    - condition: A step fails and its recovery also fails.
+      action: Halt to the safe state and escalate to a human operator.
+    - condition: Unexpected force or contact is detected.
+      action: Halt immediately, preserve state and escalate.
+  examples:
+    - title: Planning a constrained insertion
+      input:
+        task_goal: Insert connector into port with 0.5mm clearance
+        safety_envelope: Force limit 8N, reduced speed within 200mm of the fixture
+      output:
+        recovery_plan: Retract 20mm along the approach axis on force threshold
+        simulation_evidence: 200 perturbation runs, 3 failures all caught by force abort
+    - title: Planning a bin extraction
+      input:
+        task_goal: Remove target part without disturbing neighbours
+      output:
+        motion_plan: 6 steps with per-step vision confirmation
+        success_criteria: [Grasp confirmed by force and vision before lift]
+  related_skills:
+    prerequisites: [perception-grounding]
+    complementary: [sim-to-real-validation, dry-run-rehearsal]
+    successors: [sim-to-real-validation]
+    related: [autonomy-staging, runbook-authoring]
+  complexity: expert
+  build_speed: 1
+  shareability: 2
+  maturity: prototype
+  tags: [robotics, manipulation, planning, safety, recovery]
+  author: Agent Skills Compendium
+  license: CC-BY-4.0
+  risk_level: critical
+  required_permissions: [robot.plan, simulator.execute]
+  restricted_actions: [Executing on hardware without staged verification, Relaxing the safety envelope, Operating with humans in the workspace]
+  created_at: "2025-03-24T00:00:00Z"
+  updated_at: "2025-08-05T00:00:00Z"

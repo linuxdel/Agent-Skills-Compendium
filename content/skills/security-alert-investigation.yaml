@@ -1,0 +1,153 @@
+skill:
+  id: skl-security-alert-investigation
+  name: Security Alert Investigation
+  slug: security-alert-investigation
+  version: 1.0.0
+  category: cybersecurity
+  layer: L4
+  domain: security
+  description: Investigate a security alert to a defensible verdict, preserving evidence and establishing scope before any remediation.
+  purpose: >-
+    Alerts are usually closed as false positives on the strength of the first
+    plausible benign explanation, and real incidents are contaminated by early
+    remediation. This skill establishes what happened from evidence, determines
+    scope before acting, and preserves the material an investigation later needs.
+  trigger: >-
+    A detection fires, an anomaly is reported, or a third party reports suspicious
+    activity involving the organisation.
+  inputs:
+    - name: alert
+      required: true
+      type: string
+      description: The detection, its rule, its triggering data and its timestamp.
+    - name: asset_context
+      required: true
+      type: string
+      description: What the affected asset is, what it holds and who owns it.
+    - name: baseline_behaviour
+      required: false
+      type: string
+      description: What normal looks like for this asset and identity.
+    - name: related_alerts
+      required: false
+      type: string[]
+      description: Other detections in the window, which frequently form a pattern.
+  prerequisites: []
+  tools:
+    - siem
+    - log-store
+    - observability
+    - llm-inference
+    - audit-log
+    - human-review
+  dependencies:
+    - Log retention covering the relevant period
+  procedure:
+    - step: Preserve evidence first
+      description: >-
+        Capture logs, sessions and volatile state before anything is changed.
+        Remediation destroys the evidence an investigation needs.
+    - step: Establish what the detection actually observed
+      description: >-
+        Read the rule and the raw triggering data rather than the alert summary,
+        which is frequently a lossy interpretation.
+    - step: Build the timeline
+      description: >-
+        Assemble events in order across sources with consistent timestamps,
+        including what preceded the alert.
+    - step: Compare against baseline
+      description: >-
+        Determine whether the behaviour is anomalous for this identity and asset,
+        rather than anomalous in general.
+    - step: Determine scope before acting
+      description: >-
+        Establish which other identities, assets and data were touched. Acting on
+        partial scope alerts an adversary and leaves access in place.
+    - step: Test benign and malicious hypotheses
+      description: >-
+        Evaluate both explanations against all evidence; do not accept the first
+        plausible benign account.
+    - step: Reach a verdict with confidence
+      description: >-
+        State true positive, false positive or inconclusive, with the evidence
+        supporting it and what would change it.
+    - step: Hand off or close with a record
+      description: >-
+        Escalate to incident response on a true positive, or close with a record
+        that would let another analyst reach the same verdict.
+  decision_rules:
+    - condition: Evidence indicates a true positive
+      action: Escalate to incident response before taking containment action independently.
+    - condition: Scope is not yet established
+      action: Do not remediate; premature action alerts the adversary and destroys evidence.
+    - condition: The benign explanation cannot be positively confirmed
+      action: Return inconclusive rather than false positive.
+    - condition: Log retention does not cover the relevant window
+      action: Record the visibility gap as a finding and cap the verdict's confidence.
+    - condition: Related alerts form a pattern
+      action: Investigate as one campaign rather than as separate alerts.
+  outputs:
+    - name: verdict
+      type: enum
+      description: True positive, false positive or inconclusive, with confidence.
+    - name: timeline
+      type: json
+      description: Ordered events across sources with source references.
+    - name: scope_assessment
+      type: json
+      description: Identities, assets and data confirmed or suspected to be affected.
+    - name: evidence_package
+      type: document
+      description: Preserved evidence with integrity references for later investigation.
+  validation:
+    - check: Evidence was preserved before any change to the environment.
+    - check: The verdict rests on the raw triggering data, not the alert summary.
+    - check: Both benign and malicious hypotheses were tested against all evidence.
+    - check: Visibility gaps are recorded and reflected in confidence.
+  failure_modes:
+    - failure: The alert is closed on the first plausible benign story.
+      mitigation: Require positive confirmation of the benign explanation.
+    - failure: Remediation happens before scope is known and adversary access persists elsewhere.
+      mitigation: Establish scope before acting; containment is an incident-response decision.
+    - failure: Evidence is destroyed by restarting or reimaging the asset.
+      mitigation: Preserve first as a mandatory step.
+    - failure: Related alerts are triaged separately and the campaign is invisible.
+      mitigation: Correlate related alerts before reaching a verdict.
+  escalation:
+    - condition: Evidence indicates active compromise.
+      action: Escalate to incident response immediately; do not contain independently.
+    - condition: The investigation implicates an employee.
+      action: Escalate to the appropriate function; do not investigate personnel independently.
+    - condition: Regulated or personal data may have been accessed.
+      action: Escalate to privacy and legal for notification assessment.
+  examples:
+    - title: Investigating anomalous data egress
+      input:
+        alert: Large outbound transfer from a service account
+        baseline_behaviour: Account normally transfers under 50MB daily
+      output:
+        verdict: {value: true positive, confidence: high}
+        scope_assessment: One service account, two data stores, credential reused in CI
+    - title: Investigating an impossible-travel alert
+      input:
+        alert: Sign-ins from two regions 40 minutes apart
+      output:
+        verdict: {value: false positive, confidence: high}
+        evidence: Corporate VPN egress change confirmed in network change records
+  related_skills:
+    prerequisites: []
+    complementary: [threat-model-construction, production-incident-diagnosis]
+    successors: [vulnerability-triage]
+    related: [debug-root-cause-analysis, agent-red-teaming]
+  complexity: advanced
+  build_speed: 3
+  shareability: 2
+  maturity: production
+  tags: [security, detection, investigation, forensics, triage]
+  author: Agent Skills Compendium
+  license: CC-BY-4.0
+  risk_level: critical
+  required_permissions: [siem.read, logs.read]
+  restricted_actions: [Containment actions without incident response, Modifying affected systems before evidence preservation, Investigating personnel]
+  created_at: "2025-03-14T00:00:00Z"
+  updated_at: "2025-08-29T00:00:00Z"

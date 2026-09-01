@@ -1,0 +1,148 @@
+skill:
+  id: skl-regulatory-change-impact
+  name: Regulatory Change Impact
+  slug: regulatory-change-impact
+  version: 1.0.0
+  category: governance-compliance
+  layer: L4
+  domain: compliance
+  description: Translate a regulatory change into the specific obligations, systems and controls it affects, with owners and deadlines.
+  purpose: >-
+    Regulatory updates are usually circulated as summaries and then forgotten
+    until a deadline. This skill maps the change to the organisation's own
+    processes and controls, identifies the gap, and produces an owned plan with
+    dates — while marking clearly where legal interpretation is required.
+  trigger: >-
+    A regulation, standard or supervisory expectation changes, or the
+    organisation enters a new regulatory scope.
+  inputs:
+    - name: regulatory_change
+      required: true
+      type: string
+      description: The instrument, its effective date and the official text reference.
+    - name: organisational_scope
+      required: true
+      type: string
+      description: Entities, jurisdictions, products and data types potentially in scope.
+    - name: current_controls
+      required: true
+      type: string
+      description: Existing control set and process documentation.
+    - name: prior_interpretation
+      required: false
+      type: string
+      description: Legal positions already taken on related requirements.
+  prerequisites:
+    - source-credibility-assessment
+  tools:
+    - page-fetch
+    - document-parser
+    - llm-inference
+    - policy-engine
+    - knowledge-graph
+    - document-generator
+  dependencies:
+    - Access to the official instrument text, not only commentary
+  procedure:
+    - step: Read the primary instrument
+      description: >-
+        Work from the official text. Commentary and vendor summaries routinely
+        misstate scope and timing.
+    - step: Determine applicability
+      description: >-
+        Establish whether and where the organisation is in scope, including
+        thresholds, exemptions and transitional provisions.
+    - step: Extract discrete obligations
+      description: >-
+        Break the instrument into individually testable obligations rather than
+        summarising its themes.
+    - step: Map obligations to processes and controls
+      description: >-
+        Link each obligation to the process, system and control that would satisfy
+        it, and identify where none exists.
+    - step: Assess the gap
+      description: >-
+        For each obligation, determine whether current operation satisfies it,
+        partially satisfies it, or does not.
+    - step: Mark interpretation points
+      description: >-
+        Flag every obligation whose application depends on legal interpretation,
+        and do not resolve them independently.
+    - step: Produce a plan with owners and dates
+      description: >-
+        Deliver remediation items with named owners and dates derived from the
+        effective date working backwards.
+  decision_rules:
+    - condition: Applicability depends on a legal interpretation
+      action: Flag it and route to counsel; do not assume scope in either direction.
+    - condition: The change has a transitional period
+      action: Plan to the earliest binding date, not the final one.
+    - condition: An obligation has no corresponding control
+      action: Record a gap with an owner rather than mapping it to an approximately related control.
+    - condition: Only commentary is available, not the instrument
+      action: Mark the analysis provisional until the primary text is obtained.
+  outputs:
+    - name: applicability_assessment
+      type: document
+      description: Whether, where and from when the organisation is in scope.
+    - name: obligation_register
+      type: json
+      description: Discrete obligations mapped to processes, controls and gap status.
+    - name: remediation_plan
+      type: json
+      description: Gaps with owners, actions and dates derived from the effective date.
+    - name: interpretation_questions
+      type: string[]
+      description: Points requiring legal determination before implementation.
+  validation:
+    - check: The analysis works from the primary instrument text.
+    - check: Every obligation is individually testable, not thematic.
+    - check: Interpretation points are flagged and unresolved by the agent.
+    - check: Every gap has an owner and a date.
+  failure_modes:
+    - failure: A vendor summary misstates scope and the organisation prepares for the wrong obligations.
+      mitigation: Work from the official text and treat commentary as secondary.
+    - failure: Obligations are summarised thematically and gaps are missed.
+      mitigation: Extract discrete, testable obligations.
+    - failure: An interpretation is made by the agent and later proves wrong.
+      mitigation: Route all interpretation to counsel and mark it clearly.
+    - failure: Planning targets the final transitional date and misses an earlier binding one.
+      mitigation: Plan to the earliest binding date.
+  escalation:
+    - condition: The organisation appears to be currently non-compliant.
+      action: Escalate immediately to compliance and legal leadership.
+    - condition: Applicability is genuinely ambiguous.
+      action: Escalate to counsel; do not proceed on an assumed position.
+    - condition: Remediation cannot be completed before the effective date.
+      action: Escalate to leadership with the exposure quantified.
+  examples:
+    - title: Assessing a new data transfer requirement
+      input:
+        regulatory_change: Updated cross-border transfer conditions, effective in 9 months
+        organisational_scope: EU entity, three products with US subprocessors
+      output:
+        obligation_register: 14 obligations, 6 gaps
+        interpretation_questions: [Whether the analytics subprocessor falls within scope]
+    - title: Assessing an operational resilience standard
+      input:
+        regulatory_change: Supervisory expectation on critical third parties
+      output:
+        remediation_plan: 9 items, earliest binding date in 4 months
+        applicability_assessment: In scope for two of five entities
+  related_skills:
+    prerequisites: [source-credibility-assessment]
+    complementary: [control-evidence-collection, vendor-evaluation]
+    successors: [control-evidence-collection, risk-weighted-recommendation]
+    related: [threat-model-construction, executive-brief]
+  complexity: expert
+  build_speed: 1
+  shareability: 2
+  maturity: beta
+  tags: [compliance, regulation, obligations, gap-analysis, governance]
+  author: Agent Skills Compendium
+  license: CC-BY-4.0
+  risk_level: critical
+  required_permissions: [document.read, web.read]
+  restricted_actions: [Providing legal advice, Determining applicability without counsel, Asserting compliance status externally]
+  created_at: "2025-03-12T00:00:00Z"
+  updated_at: "2025-08-31T00:00:00Z"

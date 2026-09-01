@@ -1,0 +1,181 @@
+skill:
+  id: skl-competitive-intelligence-report
+  name: Competitive Intelligence Report
+  slug: competitive-intelligence-report
+  version: 1.2.0
+  category: research-intelligence
+  layer: L2
+  domain: null
+  description: Produce a sourced, confidence-scored assessment of a named competitor's position, movement and likely next actions.
+  purpose: >-
+    Decision-makers routinely ask "what is this competitor doing?" and receive a
+    summary of the competitor's own marketing. This skill produces the opposite:
+    a claim-by-claim assessment where every material statement is traceable to a
+    dated source, self-reported claims are labelled as such, and the report
+    states plainly what could not be established.
+  trigger: >-
+    A named competitor must be assessed before a positioning, pricing, roadmap or
+    investment decision — or on a recurring monitoring cadence.
+  inputs:
+    - name: competitor
+      required: true
+      type: string
+      description: Legal or trading name of the company being assessed, plus domain if the name is ambiguous.
+    - name: decision_context
+      required: true
+      type: string
+      description: The decision this report feeds. Determines which dimensions are investigated in depth.
+    - name: dimensions
+      required: false
+      type: string[]
+      description: Explicit dimensions to cover. Defaults to product, pricing, positioning, go-to-market, funding, hiring, customers.
+    - name: recency_window
+      required: false
+      type: string
+      description: How far back evidence remains relevant. Defaults to 18 months, 6 months for pricing.
+    - name: excluded_sources
+      required: false
+      type: string[]
+      description: Domains to exclude, typically the requester's own analyst subscriptions or paywalled sources they cannot share.
+  prerequisites:
+    - source-credibility-assessment
+  tools:
+    - web-search
+    - web-browser
+    - page-fetch
+    - document-parser
+    - llm-inference
+    - document-generator
+  dependencies:
+    - Network egress to the public web
+    - A citation store that survives the session
+  procedure:
+    - step: Fix the decision frame
+      description: >-
+        Restate the decision this report serves and derive the three to five
+        questions that would actually change it. Dimensions not connected to a
+        question are dropped rather than researched shallowly.
+    - step: Establish the entity
+      description: >-
+        Resolve the competitor to a specific legal entity, its subsidiaries and
+        its product lines. Ambiguity here silently corrupts every later claim.
+    - step: Collect primary evidence
+      description: >-
+        Gather first-party artifacts — pricing pages, documentation, changelogs,
+        job postings, filings, contract awards, status pages. Capture URL,
+        publication date and retrieval date for each.
+    - step: Collect secondary evidence
+      description: >-
+        Gather reporting, analyst notes and customer accounts. Mark each as
+        secondary and record whether it independently corroborates a primary
+        artifact or merely restates it.
+    - step: Triangulate each claim
+      description: >-
+        For every material claim, require either one primary source or two
+        independent secondary sources. Record which standard the claim met.
+    - step: Score confidence
+      description: >-
+        Assign high, medium or low confidence per claim based on source class,
+        independence and recency. Confidence is a property of the claim, not of
+        the report.
+    - step: Derive movement and inference
+      description: >-
+        Separate observed movement from inferred intent. Hiring, changelog and
+        pricing deltas over the window are observations; what they imply about
+        strategy is an inference and is labelled as one.
+    - step: Write the gaps section
+      description: >-
+        State explicitly what could not be established and what evidence would
+        settle it. A report without a gaps section is not finished.
+    - step: Assemble the report
+      description: >-
+        Emit the structured report with an inline citation for every material
+        claim and a machine-readable claim table alongside the prose.
+  decision_rules:
+    - condition: A claim rests only on the competitor's own marketing copy
+      action: Label it self-reported, cap confidence at low, and do not use it as the basis for an inference.
+    - condition: Two independent sources conflict on a material fact
+      action: Report both, state the conflict, prefer the more recent primary source, and flag the item in gaps.
+    - condition: Pricing evidence is older than six months
+      action: Treat pricing as unestablished rather than reporting the stale figure.
+    - condition: The competitor is private and no filings exist
+      action: Substitute hiring, infrastructure and customer-logo evidence and state the substitution in method.
+    - condition: Fewer than three independent sources exist across the whole entity
+      action: Downgrade the deliverable to an evidence memo and say the assessment could not be supported.
+  outputs:
+    - name: intelligence_report
+      type: document
+      description: Structured report — position, movement, inferred trajectory, gaps — with inline citations.
+    - name: claim_table
+      type: json
+      description: One row per material claim with source URL, source class, publication date and confidence.
+    - name: source_ledger
+      type: json
+      description: Every source consulted, including those rejected, with the rejection reason.
+    - name: monitoring_triggers
+      type: string[]
+      description: Observable events that would invalidate the assessment and should re-run it.
+  validation:
+    - check: Every material claim in the prose resolves to a row in the claim table.
+    - check: Every claim table row has a retrievable URL and a publication date.
+    - check: Self-reported claims are labelled and none of them support an inference.
+    - check: The gaps section is non-empty and names the evidence that would close each gap.
+    - check: No source in the ledger is outside the recency window without an explicit justification.
+  failure_modes:
+    - failure: The report restates the competitor's marketing narrative in neutral language.
+      mitigation: Enforce the source-class label on every claim; require primary artifacts for all capability claims.
+    - failure: Confident-sounding inference is presented as observation.
+      mitigation: Structurally separate the observed-movement section from the inferred-trajectory section.
+    - failure: A single high-ranking blog post is cited by three sources, creating false triangulation.
+      mitigation: Trace each secondary source to its own origin; sources sharing an origin count once.
+    - failure: Stale pricing drives a live pricing decision.
+      mitigation: Apply the six-month pricing window as a hard cut, not a soft preference.
+    - failure: Coverage is padded across dimensions the decision does not need.
+      mitigation: Drop dimensions not linked to a decision question in step one.
+  escalation:
+    - condition: Evidence suggests undisclosed material events such as litigation, breach or insolvency.
+      action: Stop, flag to the requester, and do not publish speculation about the event.
+    - condition: Obtaining evidence would require accessing non-public or credential-gated systems.
+      action: Refuse the path, record it as a gap, and escalate the sourcing question to the requester.
+    - condition: The requester intends to use the report in an external or regulated filing.
+      action: Escalate for legal review before release.
+  examples:
+    - title: Pricing move assessment for a mid-market SaaS competitor
+      input:
+        competitor: Northwind Analytics
+        decision_context: Whether to introduce a usage-based tier next quarter
+        dimensions: [pricing, packaging, positioning]
+        recency_window: 6 months
+      output:
+        headline: Moved to hybrid seat-plus-usage pricing in the last quarter; enterprise floor raised
+        claims_high_confidence: 6
+        claims_low_confidence: 2
+        gaps: [Actual realised discount rates, enterprise contract minimums]
+        monitoring_triggers: [Pricing page change, new usage-metering docs, RFP language shift]
+    - title: Capability assessment ahead of a build-versus-buy decision
+      input:
+        competitor: Halcyon Robotics
+        decision_context: Whether to build an in-house fleet scheduler or license theirs
+        dimensions: [product, engineering hiring, customers]
+      output:
+        headline: Scheduler is real and shipped; multi-site coordination is not evidenced
+        claims_high_confidence: 9
+        claims_low_confidence: 4
+        gaps: [Latency at fleet scale, support model for on-premise deployments]
+  related_skills:
+    prerequisites: [source-credibility-assessment]
+    complementary: [market-landscape-mapping, evidence-synthesis, account-research]
+    successors: [positioning-framework, pricing-strategy, build-buy-partner-decision]
+    related: [technical-due-diligence, executive-brief]
+  complexity: intermediate
+  build_speed: 2
+  shareability: 3
+  maturity: production
+  tags: [research, competitors, market, sourcing, provenance, monitoring]
+  author: Agent Skills Compendium
+  license: CC-BY-4.0
+  risk_level: medium
+  required_permissions: [web.read, document.write]
+  restricted_actions: [Accessing paywalled or credential-gated competitor systems, Contacting competitor employees under pretext]
+  created_at: "2025-01-14T00:00:00Z"
+  updated_at: "2025-08-22T00:00:00Z"

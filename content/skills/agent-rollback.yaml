@@ -1,0 +1,156 @@
+skill:
+  id: skl-agent-rollback
+  name: Agent Rollback
+  slug: agent-rollback
+  version: 1.0.0
+  category: agent-deployment
+  layer: L5
+  domain: null
+  description: Stop a misbehaving agent and reverse what it did, across every system it touched, without making the situation worse.
+  purpose: >-
+    Rolling back an agent is harder than rolling back a deployment, because the
+    agent has taken actions across systems that no single revert undoes. This
+    skill defines the stop mechanism, the inventory of actions taken, and the
+    reversal order, before the agent is ever given autonomy.
+  trigger: >-
+    An agent is behaving incorrectly, or a rollback capability is being designed
+    before deployment.
+  inputs:
+    - name: agent
+      required: true
+      type: string
+      description: The agent, its actions and the systems it can affect.
+    - name: incident_scope
+      required: true
+      type: string
+      description: What went wrong and the time window in which it occurred.
+    - name: action_log
+      required: true
+      type: string
+      description: The record of actions taken, which determines what can be reversed.
+    - name: downstream_effects
+      required: false
+      type: string
+      description: What consumed the agent's output, since reversal must reach them too.
+  prerequisites:
+    - agent-telemetry-instrumentation
+  tools:
+    - feature-flags
+    - deployment-system
+    - audit-log
+    - queue
+    - human-review
+    - shell
+  dependencies:
+    - A complete action log; without it, reversal is guesswork
+  procedure:
+    - step: Stop the agent first
+      description: >-
+        Halt execution and revoke its ability to act before analysing anything.
+        An agent that continues acting during diagnosis widens the problem.
+    - step: Freeze the queue, do not drain it
+      description: >-
+        Hold pending work rather than letting it complete; draining after a stop
+        is a common way to double the damage.
+    - step: Inventory what it did
+      description: >-
+        Assemble every action taken in the window from the action log, including
+        actions that appeared to fail but had partial effects.
+    - step: Classify by reversibility
+      description: >-
+        Sort actions into automatically reversible, manually reversible and
+        irreversible. The irreversible set determines the real damage.
+    - step: Identify downstream propagation
+      description: >-
+        Determine what consumed the outputs — notifications sent, records
+        created, decisions made by others — since reversal must reach them.
+    - step: Order the reversal
+      description: >-
+        Reverse in an order that does not create inconsistent intermediate
+        states, generally the inverse of the action order.
+    - step: Verify each reversal
+      description: >-
+        Confirm each system is in the expected state after reversal rather than
+        assuming the reverse operation succeeded.
+    - step: Communicate the irreversible remainder
+      description: >-
+        Report clearly what could not be undone and who is affected, rather than
+        implying full restoration.
+  decision_rules:
+    - condition: The agent is still running
+      action: Stop it before anything else; diagnosis while it acts is not diagnosis.
+    - condition: An action's effect is unclear
+      action: Treat it as having occurred and verify state directly.
+    - condition: Reversal would itself cause harm
+      action: Escalate for a human decision rather than proceeding.
+    - condition: Outputs were consumed downstream
+      action: Include downstream notification in the reversal; a reverted record with sent notifications is not reverted.
+    - condition: The action log is incomplete
+      action: Reconstruct from system state and report the uncertainty; do not assume the gap is empty.
+  outputs:
+    - name: stop_confirmation
+      type: object
+      description: Evidence the agent is halted and cannot act.
+    - name: action_inventory
+      type: json
+      description: Every action taken in the window with its reversibility class.
+    - name: reversal_record
+      type: json
+      description: Each reversal attempted, its order, and its verified outcome.
+    - name: irreversible_remainder
+      type: document
+      description: What could not be undone, who is affected and the proposed remediation.
+  validation:
+    - check: The agent was stopped before any reversal began.
+    - check: The action inventory covers the full window including partially failed actions.
+    - check: Each reversal was verified against system state, not assumed.
+    - check: Downstream propagation is addressed, not just primary records.
+    - check: The irreversible remainder is stated explicitly.
+  failure_modes:
+    - failure: The agent keeps acting during the rollback and undoes the reversals.
+      mitigation: Stop and revoke permissions first, with confirmation.
+    - failure: The queue is drained after the stop and pending bad actions complete.
+      mitigation: Freeze rather than drain.
+    - failure: Records are reverted but the notifications already sent are not addressed.
+      mitigation: Include downstream effects in the reversal scope.
+    - failure: Reversal in the wrong order leaves the system in an inconsistent state.
+      mitigation: Reverse in inverse action order and verify at each step.
+    - failure: Full restoration is reported while irreversible effects remain.
+      mitigation: Require an explicit irreversible-remainder statement.
+  escalation:
+    - condition: Irreversible actions affected customers, funds or regulated data.
+      action: Escalate immediately to the accountable owner, legal and communications.
+    - condition: The action log is incomplete for a consequential window.
+      action: Escalate; the true blast radius is unknown and must be treated as larger.
+    - condition: Reversal itself carries risk.
+      action: Escalate for a human decision before proceeding.
+  examples:
+    - title: Rolling back an agent that mislabelled tickets
+      input:
+        incident_scope: 90 minutes, 412 tickets modified
+      output:
+        action_inventory: 412 label changes, 37 auto-replies sent
+        irreversible_remainder: 37 replies already delivered; customer communication required
+    - title: Rolling back an agent that opened incorrect pull requests
+      input:
+        incident_scope: 3 hours across 14 repositories
+      output:
+        reversal_record: 22 pull requests closed, 3 branches deleted, all verified
+        irreversible_remainder: CI minutes consumed; two reviewers notified in error
+  related_skills:
+    prerequisites: [agent-telemetry-instrumentation]
+    complementary: [autonomy-staging, dry-run-rehearsal, production-incident-diagnosis]
+    successors: [failure-taxonomy]
+    related: [release-readiness-check, runbook-authoring]
+  complexity: advanced
+  build_speed: 3
+  shareability: 3
+  maturity: beta
+  tags: [deployment, rollback, containment, recovery, agents]
+  author: Agent Skills Compendium
+  license: CC-BY-4.0
+  risk_level: critical
+  required_permissions: [agent.stop, flags.write, audit.read]
+  restricted_actions: [Reversing actions without verification, Reporting full restoration while irreversible effects remain]
+  created_at: "2025-04-21T00:00:00Z"
+  updated_at: "2025-08-29T00:00:00Z"

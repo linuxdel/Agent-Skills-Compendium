@@ -1,0 +1,143 @@
+skill:
+  id: skl-structured-critique
+  name: Structured Critique
+  slug: structured-critique
+  version: 1.0.0
+  category: writing-communication
+  layer: L1
+  domain: null
+  description: Evaluate an artifact against an explicit standard and return ranked, actionable findings rather than impressions.
+  purpose: >-
+    Unstructured feedback mixes taste with correctness and buries the one issue
+    that matters among nine that do not. This skill fixes the standard first,
+    separates defect classes, ranks by consequence, and states what is already
+    good so the author knows what not to change.
+  trigger: >-
+    A document, plan, design or analysis needs review before it is committed to
+    or published.
+  inputs:
+    - name: artifact
+      required: true
+      type: string
+      description: The thing being critiqued, in full.
+    - name: standard
+      required: true
+      type: string
+      description: What good looks like here — a rubric, a house style, a set of acceptance criteria, or the artifact's own stated goal.
+    - name: stakes
+      required: false
+      type: string
+      description: What happens if a defect ships. Sets the depth and the severity thresholds.
+    - name: author_context
+      required: false
+      type: string
+      description: Constraints the author was working under, so critique does not fault decisions that were forced.
+  prerequisites: []
+  tools:
+    - llm-inference
+    - document-parser
+  dependencies: []
+  procedure:
+    - step: Restate the standard
+      description: >-
+        Write down the standard being applied before reading for faults. Critique
+        without a stated standard is preference.
+    - step: Read for the argument
+      description: >-
+        Understand what the artifact is trying to do on its own terms before
+        judging how it does it.
+    - step: Separate defect classes
+      description: >-
+        Sort findings into correctness, completeness, clarity, structure and
+        convention. Conflating them makes everything feel equally urgent.
+    - step: Rank by consequence
+      description: >-
+        Order findings by what breaks if unaddressed, not by where they appear in
+        the artifact.
+    - step: Make each finding actionable
+      description: >-
+        State the problem, why it is a problem against the standard, and a
+        specific change. A finding without a proposed change is a complaint.
+    - step: Name what works
+      description: >-
+        Identify what should be preserved, so revision does not destroy the
+        artifact's strengths while fixing its weaknesses.
+    - step: Set a threshold
+      description: >-
+        State which findings block and which are optional, so the author can act
+        without negotiating every point.
+  decision_rules:
+    - condition: A finding is a matter of taste rather than the stated standard
+      action: Label it as preference and exclude it from blocking findings.
+    - condition: The artifact fails its own stated goal
+      action: Raise that as the single top finding and de-prioritise all detail work.
+    - condition: More than seven findings emerge
+      action: Group them into themes; an author cannot act on an undifferentiated list.
+    - condition: The author was constrained into a choice being criticised
+      action: Redirect the finding to the constraint rather than to the author's decision.
+  outputs:
+    - name: findings
+      type: json
+      description: Ranked findings with class, severity, evidence and proposed change.
+    - name: blocking_set
+      type: string[]
+      description: The findings that must be resolved before the artifact proceeds.
+    - name: preserve
+      type: string[]
+      description: Strengths that revision should not damage.
+    - name: standard_applied
+      type: string
+      description: The explicit standard the critique was conducted against.
+  validation:
+    - check: The standard is stated before any finding.
+    - check: Every finding names its class and a specific proposed change.
+    - check: Blocking findings are distinguished from optional ones.
+    - check: Preference-based findings are labelled and non-blocking.
+    - check: At least one strength is identified.
+  failure_modes:
+    - failure: Style preferences are presented as defects.
+      mitigation: Require every blocking finding to cite the stated standard.
+    - failure: Findings are ordered by document position rather than by consequence.
+      mitigation: Rank explicitly and separately from the reading order.
+    - failure: The critique is thorough on detail and misses that the artifact solves the wrong problem.
+      mitigation: Run the read-for-the-argument step before line-level review.
+    - failure: The author strips the artifact's strengths while addressing findings.
+      mitigation: Deliver the preserve list alongside the findings, not after.
+  escalation:
+    - condition: The artifact contains a claim that is factually wrong and consequential.
+      action: Raise it immediately to the author and the owner rather than filing it as a finding.
+    - condition: The standard itself appears wrong for the artifact's purpose.
+      action: Escalate the standard question before completing the critique.
+  examples:
+    - title: Critiquing a product requirements document
+      input:
+        standard: Two engineers could scope this without a meeting
+        stakes: Quarter-long build
+      output:
+        blocking_set: [Success metric is not measurable, Rollback path undefined]
+        preserve: [Non-goals section is unusually clear]
+        findings_total: 6
+    - title: Critiquing an incident post-mortem
+      input:
+        standard: Blameless, causally complete, produces owned actions
+      output:
+        blocking_set: [Contributing factors stop at human error]
+        preserve: [Timeline is precise to the second]
+        findings_total: 4
+  related_skills:
+    prerequisites: []
+    complementary: [executive-brief, code-review, document-restructuring]
+    successors: [audience-adaptive-rewrite]
+    related: [technical-specification, evidence-synthesis]
+  complexity: intermediate
+  build_speed: 3
+  shareability: 3
+  maturity: production
+  tags: [critique, review, editing, quality, feedback]
+  author: Agent Skills Compendium
+  license: CC-BY-4.0
+  risk_level: low
+  required_permissions: [document.read]
+  restricted_actions: [Blocking an artifact on preference-class findings]
+  created_at: "2025-02-05T00:00:00Z"
+  updated_at: "2025-07-21T00:00:00Z"

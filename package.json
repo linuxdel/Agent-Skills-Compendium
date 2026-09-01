@@ -1,0 +1,35 @@
+{
+  "name": "agent-skills-compendium",
+  "version": "0.1.0",
+  "private": true,
+  "description": "A structured intelligence layer for building, understanding, and deploying AI agent capabilities.",
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint",
+    "typecheck": "tsc --noEmit",
+    "validate:content": "tsx scripts/validate-content.ts"
+  },
+  "dependencies": {
+    "next": "15.5.4",
+    "react": "19.1.1",
+    "react-dom": "19.1.1",
+    "yaml": "2.8.1",
+    "zod": "3.25.76"
+  },
+  "devDependencies": {
+    "@tailwindcss/postcss": "4.1.14",
+    "@types/node": "24.5.2",
+    "@types/react": "19.1.13",
+    "@types/react-dom": "19.1.9",
+    "tailwindcss": "4.1.14",
+    "tsx": "4.20.6",
+    "typescript": "5.9.2"
+  },
+  "allowScripts": {
+    "@tailwindcss/oxide@4.1.14": true,
+    "esbuild@0.25.12": true,
+    "sharp@0.34.5": true
+  }
+}

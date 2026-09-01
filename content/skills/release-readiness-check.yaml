@@ -1,0 +1,149 @@
+skill:
+  id: skl-release-readiness-check
+  name: Release Readiness Check
+  slug: release-readiness-check
+  version: 1.0.0
+  category: devops-infrastructure
+  layer: L5
+  domain: operations
+  description: Determine whether a change is safe to release by verifying reversibility, observability and exposure control rather than by ticking a checklist.
+  purpose: >-
+    Release checklists become rituals that pass while unsafe changes ship. This
+    skill assesses the three properties that actually determine safety — can it be
+    reversed, will a failure be detected, and can exposure be limited — and blocks
+    on their absence rather than on process compliance.
+  trigger: >-
+    A change is proposed for release to production.
+  inputs:
+    - name: change
+      required: true
+      type: string
+      description: What is shipping, including migrations, configuration and flags.
+    - name: verification_evidence
+      required: true
+      type: string
+      description: Test results, review status and staging observations.
+    - name: rollout_plan
+      required: false
+      type: string
+      description: Proposed exposure strategy and timing.
+    - name: blast_radius
+      required: true
+      type: string
+      description: Who is affected if it fails and how badly.
+  prerequisites: []
+  tools:
+    - ci-system
+    - deployment-system
+    - feature-flags
+    - observability
+    - test-runner
+    - version-control
+  dependencies:
+    - Access to build, test and deployment evidence for the specific artifact
+  procedure:
+    - step: Verify the artifact is the tested artifact
+      description: >-
+        Confirm the build being released is the one that passed verification, by
+        identity rather than by assumption.
+    - step: Assess reversibility
+      description: >-
+        Determine whether the change can be reversed, how quickly, and whether
+        data changes make reversal partial or impossible.
+    - step: Assess detectability
+      description: >-
+        Confirm that a failure of this specific change would be visible in
+        telemetry, and that someone is alerted.
+    - step: Assess exposure control
+      description: >-
+        Determine whether exposure can be staged and limited, and whether the
+        limit actually holds for this change type.
+    - step: Check migration ordering
+      description: >-
+        Verify schema and data changes are compatible with both the old and new
+        code during the transition window.
+    - step: Check dependency readiness
+      description: >-
+        Confirm downstream and upstream systems can handle the change, including
+        contract compatibility.
+    - step: Confirm the human context
+      description: >-
+        Verify someone who understands the change is available during and after
+        the release window.
+    - step: Issue a verdict
+      description: >-
+        Go, go with conditions, or no-go — with the specific unmet property named.
+  decision_rules:
+    - condition: The change is irreversible
+      action: Require staged exposure and explicit named acceptance of irreversibility, or no-go.
+    - condition: A failure would not be detectable in telemetry
+      action: No-go until detection exists; undetectable failures become long outages.
+    - condition: The released artifact differs from the tested artifact
+      action: No-go; re-verify the actual artifact.
+    - condition: A migration is not backward compatible
+      action: No-go; split into an expand-migrate-contract sequence.
+    - condition: Nobody who understands the change is available
+      action: Defer the release rather than relying on a runbook alone.
+  outputs:
+    - name: readiness_verdict
+      type: enum
+      description: Go, go with conditions, or no-go, with the deciding property named.
+    - name: property_assessment
+      type: json
+      description: Reversibility, detectability and exposure control assessed with evidence.
+    - name: conditions
+      type: string[]
+      description: What must be true or done before or during release.
+    - name: rollback_procedure
+      type: document
+      description: The exact steps to reverse, with the state each leaves behind.
+  validation:
+    - check: The artifact identity was verified against the tested artifact.
+    - check: Reversibility, detectability and exposure control each have an evidenced assessment.
+    - check: Migration compatibility with both code versions was checked.
+    - check: A rollback procedure exists or irreversibility is explicitly accepted by a named owner.
+  failure_modes:
+    - failure: A checklist passes while an undetectable failure mode ships.
+      mitigation: Assess detectability of this change specifically, not monitoring in general.
+    - failure: A rebuilt artifact differs from the one that passed tests.
+      mitigation: Verify artifact identity, not pipeline success.
+    - failure: A migration breaks the old code during a partial rollout.
+      mitigation: Require backward-compatible migrations or an expand-migrate-contract split.
+    - failure: A feature flag is assumed to limit exposure but the change is outside the flag.
+      mitigation: Verify that the flag actually gates the changed code path.
+  escalation:
+    - condition: The change is irreversible and affects customer data or funds.
+      action: Escalate for named executive acceptance before release.
+    - condition: A no-go verdict is overridden.
+      action: Record the override, its owner and the accepted risk in the release record.
+  examples:
+    - title: Assessing a schema migration release
+      input:
+        change: Add a non-null column with a backfill
+        blast_radius: All tenants, write path
+      output:
+        readiness_verdict: no-go
+        conditions: [Split into nullable add, backfill, then constraint in a later release]
+    - title: Assessing a flagged feature release
+      input:
+        change: New pricing calculation behind a flag
+      output:
+        readiness_verdict: go with conditions
+        conditions: [Enable at 1 percent for 24 hours, Alert on calculation divergence rate]
+  related_skills:
+    prerequisites: []
+    complementary: [dry-run-rehearsal, test-suite-authoring, infrastructure-change-review]
+    successors: [autonomy-staging, agent-rollback]
+    related: [code-review, production-incident-diagnosis]
+  complexity: advanced
+  build_speed: 3
+  shareability: 3
+  maturity: production
+  tags: [release, reversibility, detectability, exposure, operations]
+  author: Agent Skills Compendium
+  license: CC-BY-4.0
+  risk_level: high
+  required_permissions: [ci.read, deploy.read]
+  restricted_actions: [Executing the release, Overriding a no-go verdict]
+  created_at: "2025-02-15T00:00:00Z"
+  updated_at: "2025-08-19T00:00:00Z"

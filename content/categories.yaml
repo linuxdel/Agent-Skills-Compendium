@@ -1,0 +1,214 @@
+# Agent Skills Compendium
+# Copyright © 2026 Jerson Boyd Milan
+
+categories:
+  - id: cat-research-intelligence
+    slug: research-intelligence
+    name: Research & Intelligence
+    order: 1
+    glyph: "◆"
+    primary_layers: [L2, L1]
+    description: >-
+      Finding, triangulating and verifying information under time pressure.
+      Market landscapes, competitor movement, technical due diligence, source
+      credibility, evidence synthesis.
+
+  - id: cat-writing-communication
+    slug: writing-communication
+    name: Writing & Communication
+    order: 2
+    glyph: "▮"
+    primary_layers: [L3, L1]
+    description: >-
+      Turning intent and evidence into artifacts people act on. Briefs, specs,
+      narratives, executive summaries, correspondence, editing against a
+      standard.
+
+  - id: cat-data-analysis
+    slug: data-analysis
+    name: Data & Analysis
+    order: 3
+    glyph: "▤"
+    primary_layers: [L3, L1]
+    description: >-
+      Getting a defensible number and knowing what it means. Profiling, cleaning,
+      querying, statistical testing, cohort work, anomaly explanation,
+      visualisation.
+
+  - id: cat-coding-engineering
+    slug: coding-engineering
+    name: Coding & Engineering
+    order: 4
+    glyph: "⌗"
+    primary_layers: [L3, L1]
+    description: >-
+      Reading, changing and verifying software. Codebase orientation, feature
+      implementation, refactoring, review, debugging, test authoring, migration.
+
+  - id: cat-business-strategy
+    slug: business-strategy
+    name: Business Strategy
+    order: 5
+    glyph: "◈"
+    primary_layers: [L1, L4]
+    description: >-
+      Structuring consequential decisions. Market sizing, positioning, pricing,
+      build-buy-partner, scenario planning, strategic option evaluation.
+
+  - id: cat-workflow-automation
+    slug: workflow-automation
+    name: Workflow Automation
+    order: 6
+    glyph: "⟳"
+    primary_layers: [L3, L5]
+    description: >-
+      Removing recurring human steps safely. Process capture, automation design,
+      integration wiring, idempotency, dry-run rehearsal, rollout and rollback.
+
+  - id: cat-knowledge-management
+    slug: knowledge-management
+    name: Knowledge Management
+    order: 7
+    glyph: "⧉"
+    primary_layers: [L2]
+    description: >-
+      Making an organisation's knowledge retrievable and current. Taxonomy
+      design, document structuring, knowledge graphs, memory hygiene, decay and
+      contradiction handling.
+
+  - id: cat-sales-gtm
+    slug: sales-gtm
+    name: Sales & GTM
+    order: 8
+    glyph: "↗"
+    primary_layers: [L4, L2]
+    description: >-
+      Account intelligence and revenue motion. Prospect research, qualification,
+      call preparation, objection handling, pipeline hygiene, deal risk.
+
+  - id: cat-marketing-content
+    slug: marketing-content
+    name: Marketing & Content
+    order: 9
+    glyph: "◐"
+    primary_layers: [L3, L4]
+    description: >-
+      Positioning and distribution. Messaging frameworks, campaign structure,
+      content production against a brand standard, SEO, performance readouts.
+
+  - id: cat-finance-operations
+    slug: finance-operations
+    name: Finance & Operations
+    order: 10
+    glyph: "∑"
+    primary_layers: [L4]
+    description: >-
+      The numbers a business is accountable for. Reconciliation, variance
+      analysis, forecasting, close support, vendor and capacity decisions.
+
+  - id: cat-governance-compliance
+    slug: governance-compliance
+    name: Governance & Compliance
+    order: 11
+    glyph: "⚖"
+    primary_layers: [L4, L5]
+    description: >-
+      Operating inside rules that carry consequence. Policy mapping, control
+      testing, evidence collection, regulatory change tracking, audit trails,
+      agent governance.
+
+  - id: cat-cybersecurity
+    slug: cybersecurity
+    name: Cybersecurity
+    order: 12
+    glyph: "⛨"
+    primary_layers: [L4]
+    description: >-
+      Defensive security work. Threat modelling, vulnerability triage, log and
+      alert investigation, incident response, secure code review, exposure
+      assessment.
+
+  - id: cat-devops-infrastructure
+    slug: devops-infrastructure
+    name: DevOps & Infrastructure
+    order: 13
+    glyph: "⎔"
+    primary_layers: [L3, L4]
+    description: >-
+      Running systems in production. Pipelines, infrastructure as code, release
+      and rollback, observability, capacity, cost, production incident handling.
+
+  - id: cat-physical-ai-robotics
+    slug: physical-ai-robotics
+    name: Physical AI & Robotics
+    order: 14
+    glyph: "◊"
+    primary_layers: [L4, L5]
+    description: >-
+      Capabilities that move mass in the real world. Perception grounding, motion
+      planning, manipulation, teleoperation handoff, safety envelopes, sim-to-real
+      transfer.
+
+  - id: cat-multi-agent-systems
+    slug: multi-agent-systems
+    name: Multi-Agent Systems
+    order: 15
+    glyph: "⁂"
+    primary_layers: [L5]
+    description: >-
+      Many agents, one outcome. Task decomposition, delegation, role design,
+      shared state, conflict resolution, consensus, cost and loop control.
+
+  - id: cat-executive-intelligence
+    slug: executive-intelligence
+    name: Executive & Institutional Intelligence
+    order: 16
+    glyph: "▲"
+    primary_layers: [L1, L2]
+    description: >-
+      Decision support at the top of an organisation. Board material, situation
+      assessment, stakeholder mapping, option framing, institutional memory,
+      briefings under uncertainty.
+
+  - id: cat-personal-productivity
+    slug: personal-productivity
+    name: Personal Productivity
+    order: 17
+    glyph: "✓"
+    primary_layers: [L1, L3]
+    description: >-
+      Individual throughput. Inbox and commitment triage, planning, meeting
+      capture, context restoration, personal knowledge routing.
+
+  - id: cat-agent-evaluation
+    slug: agent-evaluation
+    name: Agent Evaluation
+    order: 18
+    glyph: "◎"
+    primary_layers: [L5]
+    description: >-
+      Knowing whether an agent is actually good. Eval set design, rubric
+      authoring, LLM-as-judge calibration, regression suites, failure taxonomy,
+      benchmark honesty.
+
+  - id: cat-agent-security
+    slug: agent-security
+    name: Agent Security
+    order: 19
+    glyph: "⛬"
+    primary_layers: [L5, L4]
+    description: >-
+      Securing the agent itself. Prompt-injection defence, tool permission
+      scoping, output sanitisation, secret handling, untrusted-content
+      boundaries, red-teaming.
+
+  - id: cat-agent-deployment
+    slug: agent-deployment
+    name: Agent Deployment
+    order: 20
+    glyph: "⇗"
+    primary_layers: [L5, L3]
+    description: >-
+      Getting agents into production and keeping them there. Environment
+      promotion, autonomy staging, human-in-the-loop wiring, telemetry, cost
+      ceilings, kill switches, versioned rollout.

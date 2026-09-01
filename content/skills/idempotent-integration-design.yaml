@@ -1,0 +1,155 @@
+skill:
+  id: skl-idempotent-integration-design
+  name: Idempotent Integration Design
+  slug: idempotent-integration-design
+  version: 1.1.0
+  category: workflow-automation
+  layer: L3
+  domain: software-engineering
+  description: Design an integration between systems that produces correct results under retries, duplicates, reordering and partial failure.
+  purpose: >-
+    Integrations are written for the case where both systems respond. Production
+    supplies timeouts, duplicate deliveries, out-of-order events and partial
+    writes. This skill designs for those conditions first, so that correctness
+    does not depend on the network behaving.
+  trigger: >-
+    Two systems must exchange data or trigger actions across a boundary that can
+    fail independently.
+  inputs:
+    - name: systems
+      required: true
+      type: string
+      description: The source and target systems and the direction of flow.
+    - name: operation_semantics
+      required: true
+      type: string
+      description: What the operation does and whether it is naturally repeatable.
+    - name: delivery_guarantees
+      required: true
+      type: string
+      description: What the transport actually guarantees — at most once, at least once, ordering.
+    - name: consistency_requirement
+      required: false
+      type: string
+      description: How much divergence between systems is tolerable and for how long.
+  prerequisites:
+    - codebase-orientation
+  tools:
+    - http-client
+    - code-editor
+    - queue
+    - file-system
+    - test-runner
+    - llm-inference
+  dependencies:
+    - Documented or observed behaviour of both systems under failure
+  procedure:
+    - step: Establish real delivery guarantees
+      description: >-
+        Determine what the transport actually provides rather than what its
+        documentation implies. Assume at-least-once and possible reordering
+        unless proven otherwise.
+    - step: Choose the idempotency key
+      description: >-
+        Derive a key from the business event, stable across retries and unique
+        per intended effect. Generated-at-send keys defeat the purpose.
+    - step: Define the deduplication window
+      description: >-
+        Set a retention period longer than the maximum retry horizon of the
+        sender, and define behaviour beyond it.
+    - step: Make the effect repeatable
+      description: >-
+        Prefer operations that can be applied twice safely. Where impossible,
+        record the effect and short-circuit on repeat.
+    - step: Handle ordering explicitly
+      description: >-
+        Use versions or sequence numbers so a late-arriving stale update cannot
+        overwrite a newer state.
+    - step: Design partial-failure recovery
+      description: >-
+        Define what happens when the effect is applied but acknowledgement is
+        lost, which is the case that produces duplicates.
+    - step: Add reconciliation
+      description: >-
+        Build a periodic comparison that detects and reports divergence, since
+        every integration eventually diverges.
+    - step: Test the failure matrix
+      description: >-
+        Test duplicate, out-of-order, delayed, partial and poison-message cases
+        as first-class test cases.
+  decision_rules:
+    - condition: The operation is not naturally idempotent
+      action: Add an effect ledger keyed by the idempotency key and short-circuit repeats.
+    - condition: The transport may reorder
+      action: Add version-based conflict resolution; last-write-wins on arrival time is incorrect.
+    - condition: The sender's retry horizon is unknown
+      action: Set the deduplication window conservatively long and monitor for keys arriving beyond it.
+    - condition: A message repeatedly fails
+      action: Route to a dead-letter path with alerting rather than retrying indefinitely.
+    - condition: Systems can diverge without detection
+      action: Reconciliation is mandatory, not optional.
+  outputs:
+    - name: integration_design
+      type: document
+      description: Keys, windows, ordering strategy, failure handling and reconciliation.
+    - name: failure_matrix
+      type: json
+      description: Each failure mode with the designed behaviour and the test that covers it.
+    - name: reconciliation_spec
+      type: document
+      description: What is compared, how often, and what happens on divergence.
+    - name: monitoring_signals
+      type: string[]
+      description: Metrics and alerts that reveal duplication, lag and divergence.
+  validation:
+    - check: Applying the same message twice produces one effect, verified by test.
+    - check: A stale out-of-order update does not overwrite newer state, verified by test.
+    - check: A dead-letter path exists with alerting.
+    - check: Reconciliation is specified with a defined cadence and divergence action.
+  failure_modes:
+    - failure: Duplicate charges or duplicate records after a timeout-then-success.
+      mitigation: Business-derived idempotency keys plus an effect ledger.
+    - failure: A retried stale event overwrites current state.
+      mitigation: Version-based conflict resolution rather than arrival-order writes.
+    - failure: A poison message blocks the queue indefinitely.
+      mitigation: Bounded retries with a dead-letter path and alerting.
+    - failure: Systems drift apart for months without anyone noticing.
+      mitigation: Mandatory reconciliation with divergence alerting.
+  escalation:
+    - condition: The target system cannot support idempotency and the operation moves money.
+      action: Escalate rather than shipping; the risk belongs to the business owner.
+    - condition: Reconciliation reveals divergence affecting customer-visible state.
+      action: Escalate immediately to the data owner with the divergence set.
+  examples:
+    - title: Payment capture from an order service
+      input:
+        operation_semantics: Capture funds against an authorisation
+        delivery_guarantees: At least once, no ordering guarantee
+      output:
+        idempotency_key: order_id plus capture_attempt_sequence
+        window: 30 days
+        reconciliation: Daily comparison of captures against ledger entries
+    - title: CRM contact synchronisation
+      input:
+        operation_semantics: Upsert contact records
+        consistency_requirement: Convergent within 15 minutes
+      output:
+        ordering: Source-side updated_at version field with conflict logging
+        failure_matrix: 9 cases covered by integration tests
+  related_skills:
+    prerequisites: [codebase-orientation]
+    complementary: [test-suite-authoring, dry-run-rehearsal]
+    successors: [runbook-authoring, release-readiness-check]
+    related: [process-capture, technical-specification]
+  complexity: advanced
+  build_speed: 2
+  shareability: 3
+  maturity: production
+  tags: [integration, idempotency, reliability, distributed, automation]
+  author: Agent Skills Compendium
+  license: CC-BY-4.0
+  risk_level: high
+  required_permissions: [repo.write, api.write]
+  restricted_actions: [Deploying a non-idempotent money-moving integration, Testing against production endpoints]
+  created_at: "2025-01-28T00:00:00Z"
+  updated_at: "2025-08-18T00:00:00Z"

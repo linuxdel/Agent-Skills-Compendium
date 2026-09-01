@@ -1,0 +1,154 @@
+skill:
+  id: skl-market-landscape-mapping
+  name: Market Landscape Mapping
+  slug: market-landscape-mapping
+  version: 1.0.0
+  category: research-intelligence
+  layer: L2
+  domain: null
+  description: Build a defensible map of who serves a market, along axes that discriminate between players rather than flatter them.
+  purpose: >-
+    Most landscape work produces a two-by-two that every vendor lands in the
+    top-right of. This skill derives axes from buyer decision criteria, places
+    players using observable evidence, and states which players could not be
+    placed and why.
+  trigger: >-
+    Entering, repositioning in, or investing against a market whose structure is
+    not already understood.
+  inputs:
+    - name: market_definition
+      required: true
+      type: string
+      description: The market stated as a buyer, a job and a budget line, not as a product category.
+    - name: purpose
+      required: true
+      type: string
+      description: Entry, positioning, investment or partnership. Determines which axes matter.
+    - name: known_players
+      required: false
+      type: string[]
+      description: Seed set of vendors. The map must extend beyond it.
+    - name: geography
+      required: false
+      type: string
+      description: Regional scope, since market structure rarely transfers across regions.
+  prerequisites:
+    - source-credibility-assessment
+  tools:
+    - web-search
+    - web-browser
+    - page-fetch
+    - llm-inference
+    - chart-renderer
+    - document-generator
+  dependencies:
+    - Network egress to the public web
+  procedure:
+    - step: Define the market by demand, not supply
+      description: >-
+        State who buys, what job they are hiring for, and which budget it comes
+        from. A supply-side definition produces a category map, not a market map.
+    - step: Enumerate players from multiple discovery paths
+      description: >-
+        Find players through buyer-side sources, procurement records, job posts,
+        integration directories and review sites, not from a single list that
+        encodes one publisher's view.
+    - step: Derive discriminating axes
+      description: >-
+        Extract the criteria buyers actually trade off, and keep only axes on
+        which the player set genuinely spreads. An axis where everyone scores
+        high is a table stake, not an axis.
+    - step: Place players on evidence
+      description: >-
+        Position each player using observable artifacts — documentation, pricing,
+        customer profile, deployment model — and record the artifact per placement.
+    - step: Identify structural gaps
+      description: >-
+        Locate regions of the map with demand evidence but no credible supply,
+        and distinguish genuine gaps from regions that are empty because the
+        combination is unviable.
+    - step: Mark the unplaceable
+      description: >-
+        List players that could not be placed and state the missing evidence,
+        rather than guessing a position.
+    - step: Emit map and structural read
+      description: >-
+        Produce the visual map, the placement table with evidence, and a written
+        read of how the structure is likely to move.
+  decision_rules:
+    - condition: All players cluster in one region of an axis
+      action: Discard the axis as a table stake and derive a replacement.
+    - condition: A player serves a different buyer or budget line
+      action: Exclude it from the market and record the exclusion reason.
+    - condition: An apparent white space has no demand evidence
+      action: Label it unviable rather than presenting it as an opportunity.
+    - condition: Placement rests only on the vendor's self-description
+      action: Mark the placement as provisional and exclude it from gap analysis.
+  outputs:
+    - name: landscape_map
+      type: chart
+      description: Two-axis map with players placed, table stakes noted, and gaps marked.
+    - name: placement_table
+      type: json
+      description: Player, axis scores, supporting evidence URL and placement confidence.
+    - name: structural_read
+      type: document
+      description: How the market is segmented, where consolidation or entry pressure sits, what would change it.
+    - name: exclusions
+      type: json
+      description: Players considered and excluded, with reasons.
+  validation:
+    - check: Both axes show genuine spread across the player set.
+    - check: Every placement cites at least one observable artifact.
+    - check: The market definition names a buyer, a job and a budget line.
+    - check: Each identified gap is supported by demand evidence, not by absence alone.
+  failure_modes:
+    - failure: The map reproduces an analyst firm's existing quadrant.
+      mitigation: Derive axes from buyer criteria before consulting any published landscape.
+    - failure: Vendors are placed by marketing claims and everyone appears differentiated.
+      mitigation: Require artifact-based placement; mark self-described placements provisional.
+    - failure: Adjacent markets are collapsed into one, producing an incoherent map.
+      mitigation: Apply the budget-line test to every candidate player.
+    - failure: Empty regions are sold as opportunities.
+      mitigation: Require independent demand evidence before labelling a gap.
+  escalation:
+    - condition: The market definition keeps shifting under examination.
+      action: Return to the requester with two or three concrete alternative definitions and their consequences.
+    - condition: The map will be used in fundraising or public materials.
+      action: Escalate for review of every claim used as a differentiator.
+  examples:
+    - title: Mapping observability tooling for mid-market engineering teams
+      input:
+        market_definition: Engineering leaders at 50-500 person companies buying incident-reduction tooling from an infrastructure budget
+        purpose: entry
+      output:
+        axes: [Time to first signal, Operational ownership required]
+        players_placed: 14
+        unplaceable: 3
+        gap: Low-ownership tooling for teams without a platform function
+    - title: Mapping regional payment orchestration vendors
+      input:
+        market_definition: Finance operations teams at cross-border merchants buying routing and reconciliation from a payments budget
+        purpose: partnership
+        geography: Southeast Asia
+      output:
+        axes: [Local acquirer coverage, Reconciliation depth]
+        players_placed: 9
+        gap: Deep reconciliation with local coverage outside two markets
+  related_skills:
+    prerequisites: [source-credibility-assessment]
+    complementary: [competitive-intelligence-report, market-sizing]
+    successors: [positioning-framework, scenario-planning]
+    related: [evidence-synthesis, messaging-framework]
+  complexity: advanced
+  build_speed: 1
+  shareability: 3
+  maturity: beta
+  tags: [market, landscape, positioning, segmentation, research]
+  author: Agent Skills Compendium
+  license: CC-BY-4.0
+  risk_level: medium
+  required_permissions: [web.read, document.write]
+  restricted_actions: [Presenting unverified placements as established]
+  created_at: "2025-02-03T00:00:00Z"
+  updated_at: "2025-08-11T00:00:00Z"

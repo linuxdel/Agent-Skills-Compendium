@@ -1,0 +1,148 @@
+skill:
+  id: skl-memory-hygiene
+  name: Memory Hygiene
+  slug: memory-hygiene
+  version: 1.0.0
+  category: knowledge-management
+  layer: L2
+  domain: null
+  description: Decide what an agent should durably remember, how it decays, and how contradictions between memories are resolved.
+  purpose: >-
+    Agent memory degrades in two directions: it fills with transient noise, and it
+    retains facts that stopped being true. This skill sets admission criteria,
+    decay policy and contradiction handling, so that recall improves behaviour
+    rather than anchoring it to a stale world.
+  trigger: >-
+    An agent has durable memory and is either forgetting what matters or acting on
+    what is no longer true.
+  inputs:
+    - name: candidate_memory
+      required: true
+      type: string
+      description: The fact or preference being considered for storage.
+    - name: existing_memories
+      required: true
+      type: string
+      description: Current memory contents relevant to the candidate.
+    - name: memory_purpose
+      required: true
+      type: string
+      description: What memory is for in this system, which sets admission criteria.
+    - name: volatility
+      required: false
+      type: string
+      description: How fast the fact changes, which sets its decay.
+  prerequisites: []
+  tools:
+    - agent-memory
+    - llm-inference
+    - embedding-index
+    - audit-log
+  dependencies:
+    - A memory store supporting update, expiry and provenance
+  procedure:
+    - step: Apply admission criteria
+      description: >-
+        Store only what will change future behaviour and is not derivable from
+        the environment. Conversation detail and repo-derivable facts are excluded.
+    - step: Classify the memory type
+      description: >-
+        Distinguish durable identity, stated preference, project state and
+        external reference, since each decays differently.
+    - step: Check for an existing memory
+      description: >-
+        Search before writing and update the existing record rather than creating
+        a near-duplicate, which is the main cause of contradiction.
+    - step: Absolutise time references
+      description: >-
+        Convert relative dates and current-state language into absolute form, so
+        the memory remains interpretable when recalled.
+    - step: Attach provenance and confidence
+      description: >-
+        Record who or what asserted it, when, and how confident the assertion was.
+    - step: Set decay
+      description: >-
+        Assign an expiry or a review date derived from volatility rather than a
+        uniform retention period.
+    - step: Resolve contradictions
+      description: >-
+        On conflict with an existing memory, prefer the more recent direct
+        assertion, record the supersession, and delete rather than accumulate.
+    - step: Verify on recall
+      description: >-
+        When a memory names a file, tool or system, verify it still exists before
+        acting on it.
+  decision_rules:
+    - condition: The fact is derivable from the environment
+      action: Do not store it; environment-derived facts go stale and add noise.
+    - condition: A near-duplicate memory exists
+      action: Update the existing record rather than writing a new one.
+    - condition: A new assertion contradicts a stored memory
+      action: Prefer the direct recent assertion, supersede the old record, and log the change.
+    - condition: The memory is project state
+      action: Attach an absolute date and a review trigger tied to project completion.
+    - condition: A recalled memory references something that no longer exists
+      action: Treat the memory as stale, correct it, and do not act on it.
+  outputs:
+    - name: memory_record
+      type: object
+      description: The stored memory with type, provenance, confidence and decay policy.
+    - name: supersession_log
+      type: json
+      description: Memories updated or deleted, with the reason.
+    - name: admission_decision
+      type: object
+      description: Whether the candidate was stored, and the criterion applied.
+    - name: staleness_report
+      type: json
+      description: Stored memories whose references no longer resolve.
+  validation:
+    - check: No stored memory duplicates an existing one on the same subject.
+    - check: Every memory has provenance, a date and a decay policy.
+    - check: Relative time references were converted to absolute form.
+    - check: Contradictions were resolved by supersession rather than by accumulation.
+  failure_modes:
+    - failure: Memory fills with conversational detail and recall becomes noise.
+      mitigation: Enforce admission criteria; store only behaviour-changing facts.
+    - failure: A stale preference overrides a current instruction.
+      mitigation: Prefer direct recent assertions and treat memory as background context.
+    - failure: Contradictory memories coexist and recall is nondeterministic.
+      mitigation: Search before write and supersede explicitly.
+    - failure: A memory refers to a file or flag that no longer exists.
+      mitigation: Verify references on recall before acting.
+  escalation:
+    - condition: A candidate memory contains credentials or personal data.
+      action: Refuse storage and notify the user; memory is not a secret store.
+    - condition: Memory contents would be used for a purpose the user did not consent to.
+      action: Escalate rather than proceeding.
+  examples:
+    - title: Storing a stated preference
+      input:
+        candidate_memory: User prefers integration tests over unit tests for this service
+        memory_purpose: Improve future engineering work in this project
+      output:
+        admission_decision: {stored: true, type: preference}
+        decay: Review at project completion
+    - title: Handling a contradicted memory
+      input:
+        candidate_memory: Deployment now goes through the new pipeline
+        existing_memories: Deployment goes through the legacy pipeline
+      output:
+        supersession_log: [Legacy pipeline memory deleted, superseded 2025-08-10]
+  related_skills:
+    prerequisites: []
+    complementary: [taxonomy-design, knowledge-graph-construction]
+    successors: [knowledge-synthesis-brief]
+    related: [source-credibility-assessment, agent-telemetry-instrumentation]
+  complexity: intermediate
+  build_speed: 3
+  shareability: 3
+  maturity: beta
+  tags: [memory, decay, provenance, agents, contradiction]
+  author: Agent Skills Compendium
+  license: CC-BY-4.0
+  risk_level: medium
+  required_permissions: [memory.read, memory.write]
+  restricted_actions: [Storing credentials or personal data, Retaining memory beyond its stated purpose]
+  created_at: "2025-03-05T00:00:00Z"
+  updated_at: "2025-08-21T00:00:00Z"

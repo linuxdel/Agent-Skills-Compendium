@@ -1,0 +1,150 @@
+skill:
+  id: skl-runbook-authoring
+  name: Runbook Authoring
+  slug: runbook-authoring
+  version: 1.0.0
+  category: workflow-automation
+  layer: L3
+  domain: operations
+  description: Write an operational procedure that a tired person or an agent can execute correctly at three in the morning without prior context.
+  purpose: >-
+    Runbooks fail when they assume the reader knows what the author knew. This
+    skill writes for the least-context executor, makes every step verifiable,
+    states the decision criteria at each branch, and includes the abort path that
+    most runbooks omit.
+  trigger: >-
+    A procedure will be executed by someone other than its author, under time
+    pressure, or repeatedly.
+  inputs:
+    - name: procedure
+      required: true
+      type: string
+      description: What the runbook accomplishes and the steps as currently understood.
+    - name: executor_profile
+      required: true
+      type: string
+      description: Who will run it and what they can be assumed to know.
+    - name: failure_context
+      required: false
+      type: string
+      description: The situations in which it will be executed, which are usually degraded ones.
+    - name: system_access
+      required: false
+      type: string
+      description: What access the executor will have, which constrains every step.
+  prerequisites:
+    - process-capture
+  tools:
+    - document-generator
+    - file-system
+    - shell
+    - observability
+    - llm-inference
+  dependencies:
+    - A test environment where the runbook can be executed end to end
+  procedure:
+    - step: State the trigger and the goal
+      description: >-
+        Open with when to use this runbook, when not to, and what success looks
+        like, so the executor can confirm they are in the right document.
+    - step: List preconditions and access
+      description: >-
+        State required access, tools and system state up front. Discovering a
+        missing permission at step nine costs more than the whole procedure.
+    - step: Write executable steps
+      description: >-
+        Give exact commands, exact values and exact locations. Steps that require
+        interpretation will be interpreted differently under stress.
+    - step: Add verification after each consequential step
+      description: >-
+        State what to check and what the expected output looks like, so the
+        executor knows whether the step worked before continuing.
+    - step: Write the branches
+      description: >-
+        Where outcomes differ, state the decision criteria explicitly rather than
+        relying on the executor's judgement.
+    - step: Include the abort path
+      description: >-
+        Define how to stop safely at each stage and what state that leaves the
+        system in.
+    - step: Define escalation
+      description: >-
+        Name who to contact, how, and at what point, with the information they
+        will need.
+    - step: Execute it as written
+      description: >-
+        Run the runbook in a test environment following it literally, and fix
+        every place where literal execution fails.
+  decision_rules:
+    - condition: A step requires knowledge the executor profile does not have
+      action: Expand the step or add the required context inline; do not link away to it mid-procedure.
+    - condition: A step is irreversible
+      action: Add a confirmation gate and state the consequence before the command.
+    - condition: Expected output is ambiguous
+      action: Include a literal example of correct output.
+    - condition: The runbook has more than three branch points
+      action: Split it into separate runbooks, one per situation.
+    - condition: Literal execution fails in test
+      action: Fix the runbook, not the executor's interpretation.
+  outputs:
+    - name: runbook
+      type: document
+      description: Trigger, preconditions, steps with verification, branches, abort path, escalation.
+    - name: execution_evidence
+      type: string
+      description: Record of the runbook being executed literally in a test environment.
+    - name: prerequisites_checklist
+      type: string[]
+      description: Access, tools and state required before starting.
+  validation:
+    - check: The runbook was executed literally end to end in a test environment.
+    - check: Every consequential step has a verification with expected output.
+    - check: An abort path exists for each stage.
+    - check: Escalation contacts and criteria are named.
+    - check: No step requires knowledge outside the stated executor profile.
+  failure_modes:
+    - failure: The runbook assumes the author's context and stalls a stressed executor.
+      mitigation: Write to the stated executor profile and test with someone matching it.
+    - failure: Commands are approximate and produce different results in different environments.
+      mitigation: Give exact commands and values; parameterise explicitly.
+    - failure: The executor cannot tell whether a step worked.
+      mitigation: Require verification with literal expected output after consequential steps.
+    - failure: A partially executed runbook leaves the system in an undefined state.
+      mitigation: Define the abort path and resulting state at each stage.
+  escalation:
+    - condition: Executing the runbook reveals the underlying problem is different.
+      action: Stop and escalate rather than continuing a procedure for the wrong situation.
+    - condition: A step requires production credentials the executor should not hold.
+      action: Escalate the access design rather than embedding a shared credential.
+  examples:
+    - title: Database failover runbook
+      input:
+        procedure: Promote the replica when the primary is unreachable
+        executor_profile: On-call engineer, not a database specialist
+      output:
+        steps: 11 with verification after each
+        abort_path: Defined at three stages with resulting state
+    - title: Certificate rotation runbook
+      input:
+        procedure: Rotate the edge TLS certificate
+        failure_context: Executed under expiry pressure
+      output:
+        prerequisites_checklist: [Access to secret store, Change window approval]
+        execution_evidence: Executed literally in staging on 2025-07-04
+  related_skills:
+    prerequisites: [process-capture]
+    complementary: [dry-run-rehearsal, production-incident-diagnosis]
+    successors: [automation-opportunity-assessment]
+    related: [technical-specification, agent-rollback]
+  complexity: intermediate
+  build_speed: 3
+  shareability: 3
+  maturity: production
+  tags: [runbook, operations, procedures, reliability, on-call]
+  author: Agent Skills Compendium
+  license: CC-BY-4.0
+  risk_level: medium
+  required_permissions: [document.write, shell.execute]
+  restricted_actions: [Embedding credentials in the runbook, Publishing an untested runbook]
+  created_at: "2025-02-04T00:00:00Z"
+  updated_at: "2025-07-22T00:00:00Z"

@@ -1,0 +1,145 @@
+skill:
+  id: skl-stakeholder-mapping
+  name: Stakeholder Mapping
+  slug: stakeholder-mapping
+  version: 1.0.0
+  category: executive-intelligence
+  layer: L1
+  domain: null
+  description: Identify who can advance or block a decision, what each of them actually optimises for, and where the real influence sits.
+  purpose: >-
+    Decisions stall because the org chart was mapped instead of the influence
+    network. This skill identifies stated versus revealed interests, locates
+    informal authority, and produces a sequence of engagement rather than a
+    diagram.
+  trigger: >-
+    A decision or change requires agreement from people the initiator does not
+    control.
+  inputs:
+    - name: decision
+      required: true
+      type: string
+      description: What must be decided or changed, and by when.
+    - name: known_parties
+      required: true
+      type: string[]
+      description: People and functions already known to be involved.
+    - name: history
+      required: false
+      type: string
+      description: Prior attempts at this or similar decisions and how they ended.
+    - name: constraints
+      required: false
+      type: string[]
+      description: Political, contractual or timing constraints on how engagement can proceed.
+  prerequisites: []
+  tools:
+    - llm-inference
+    - crm
+    - chat-platform
+    - document-generator
+  dependencies:
+    - Access to organisational context; this skill does not profile individuals personally
+  procedure:
+    - step: Identify decision rights
+      description: >-
+        Determine who formally decides, who must be consulted, who can veto, and
+        who merely has an opinion. These are frequently different people.
+    - step: Locate informal influence
+      description: >-
+        Identify whose view others adopt, which rarely tracks the reporting line
+        and usually determines the outcome.
+    - step: Distinguish stated from revealed interests
+      description: >-
+        Compare what each party says they want against what their incentives and
+        past behaviour indicate. Plans built on stated interests fail quietly.
+    - step: Identify what each party risks
+      description: >-
+        Determine what each stands to lose. Opposition is usually about downside
+        exposure rather than disagreement with the merits.
+    - step: Read the history
+      description: >-
+        Establish how similar decisions went and who was affected, since that
+        history sets current positions more than current arguments do.
+    - step: Map coalitions and dependencies
+      description: >-
+        Identify who moves together and who cannot support before someone else
+        does.
+    - step: Sequence the engagement
+      description: >-
+        Determine the order of conversations, since the wrong order hardens
+        positions that a different order would have avoided.
+  decision_rules:
+    - condition: A party's stated and revealed interests diverge
+      action: Plan against the revealed interest and address the underlying risk directly.
+    - condition: A blocker's objection is about downside exposure
+      action: Address the exposure rather than re-arguing the merits.
+    - condition: A party cannot commit before another does
+      action: Sequence accordingly; approaching them first produces a defensive no.
+    - condition: Informal influence sits outside the formal decision set
+      action: Include them in the engagement plan even without formal rights.
+    - condition: The decision has failed before
+      action: Establish why before engaging anyone; the prior failure is the primary constraint.
+  outputs:
+    - name: stakeholder_map
+      type: json
+      description: Parties with decision rights, influence, stated and revealed interests, and risk exposure.
+    - name: engagement_sequence
+      type: json
+      description: Ordered conversations with the objective and the concern to address in each.
+    - name: opposition_analysis
+      type: document
+      description: Likely resistance, its actual basis, and how it could be addressed.
+    - name: coalition_map
+      type: json
+      description: Who moves together and who depends on whom.
+  validation:
+    - check: Decision rights are distinguished from opinion.
+    - check: Revealed interests are inferred from incentives and behaviour, not assumed from role.
+    - check: The engagement sequence has a stated reason for its order.
+    - check: The analysis addresses organisational positions, not personal characteristics.
+  failure_modes:
+    - failure: The org chart is mapped and the actual influencer is missed.
+      mitigation: Identify informal influence explicitly as a separate step.
+    - failure: Stated support evaporates at the decision point.
+      mitigation: Plan against revealed interests and risk exposure.
+    - failure: The wrong first conversation hardens a position permanently.
+      mitigation: Sequence engagement deliberately with a stated rationale.
+    - failure: The analysis becomes a personal assessment of individuals.
+      mitigation: Restrict to roles, interests and organisational exposure.
+  escalation:
+    - condition: The decision requires authority nobody in the map holds.
+      action: Escalate to identify the correct decision-maker before engaging further.
+    - condition: Opposition rests on a legitimate risk the plan does not address.
+      action: Escalate the plan's gap rather than treating it as a communication problem.
+  examples:
+    - title: Mapping stakeholders for a platform consolidation
+      input:
+        decision: Consolidate three team-owned services onto one platform
+        history: Attempted 18 months ago, abandoned after two teams objected
+      output:
+        opposition_analysis: Objection is on-call ownership, not architecture
+        engagement_sequence: Infrastructure lead, then the two service owners jointly
+    - title: Mapping stakeholders for a pricing change
+      input:
+        decision: Move from per-seat to hybrid pricing
+      output:
+        stakeholder_map: Sales leadership holds effective veto through quota impact
+        coalition_map: Finance and product aligned; sales dependent on comp plan resolution
+  related_skills:
+    prerequisites: []
+    complementary: [situation-assessment, executive-brief, account-research]
+    successors: [executive-brief, risk-weighted-recommendation]
+    related: [deal-risk-assessment, build-buy-partner-decision]
+  complexity: intermediate
+  build_speed: 3
+  shareability: 3
+  maturity: beta
+  tags: [executive, stakeholders, influence, decisions, organisation]
+  author: Agent Skills Compendium
+  license: CC-BY-4.0
+  risk_level: medium
+  required_permissions: [document.write]
+  restricted_actions: [Profiling individuals personally, Recording sensitive personal information]
+  created_at: "2025-04-03T00:00:00Z"
+  updated_at: "2025-07-23T00:00:00Z"

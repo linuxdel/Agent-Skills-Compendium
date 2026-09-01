@@ -1,0 +1,149 @@
+skill:
+  id: skl-codebase-orientation
+  name: Codebase Orientation
+  slug: codebase-orientation
+  version: 1.2.0
+  category: coding-engineering
+  layer: L2
+  domain: software-engineering
+  description: Build an accurate working model of an unfamiliar codebase — its boundaries, conventions, invariants and hazards — before changing anything.
+  purpose: >-
+    Agents and new engineers make their worst changes in the first hour, because
+    they act on a model assembled from file names. This skill produces a model
+    grounded in execution paths, ownership signals and the project's own
+    conventions, and names the places where a plausible change would be wrong.
+  trigger: >-
+    Work must be done in a codebase whose structure, conventions or invariants
+    are not already known.
+  inputs:
+    - name: repository
+      required: true
+      type: string
+      description: Path or URL of the codebase.
+    - name: task_intent
+      required: true
+      type: string
+      description: What will be changed, so orientation is scoped rather than exhaustive.
+    - name: depth
+      required: false
+      type: string
+      description: Survey, working or deep, matching the size of the intended change.
+  prerequisites: []
+  tools:
+    - code-search
+    - file-system
+    - version-control
+    - build-system
+    - test-runner
+    - llm-inference
+  dependencies:
+    - Read access to the repository and its history
+  procedure:
+    - step: Read the project's own account of itself
+      description: >-
+        Start with README, contributing guides, architecture notes and agent
+        instruction files. These state conventions that are not inferable from code.
+    - step: Establish entry points
+      description: >-
+        Identify how the system is started, served, built and tested. Entry
+        points anchor every later question about control flow.
+    - step: Trace one real path end to end
+      description: >-
+        Follow a single representative request or command from entry to
+        persistence. One traced path teaches more than reading ten files.
+    - step: Locate the change surface
+      description: >-
+        Find the specific modules the intended change touches and their direct
+        dependents, using reference search rather than directory intuition.
+    - step: Extract conventions from the code
+      description: >-
+        Derive naming, error handling, logging, testing and dependency
+        conventions from what the code actually does, not from documentation.
+    - step: Read history for hazards
+      description: >-
+        Use version control to find files with high churn, repeated reverts or
+        defensive comments; these mark the invariants that are easy to break.
+    - step: Establish the verification loop
+      description: >-
+        Determine how to build, test and run the project locally, and confirm the
+        loop works before making changes.
+    - step: Record the model and its uncertainties
+      description: >-
+        Write down the model, the conventions to follow, and the questions that
+        remain open, so the change itself starts from a stated basis.
+  decision_rules:
+    - condition: Documentation contradicts the code
+      action: Follow the code and record the contradiction as a finding.
+    - condition: The verification loop does not run locally
+      action: Fix or characterise the loop before making any change; unverifiable changes are not deliverable.
+    - condition: The change surface touches a file with heavy revert history
+      action: Raise caution, read the reverted commits, and expand test coverage before editing.
+    - condition: Two conflicting conventions exist in the codebase
+      action: Follow the convention local to the file being changed and note the divergence.
+  outputs:
+    - name: codebase_model
+      type: document
+      description: Boundaries, entry points, traced path, ownership and data flow relevant to the task.
+    - name: conventions
+      type: json
+      description: Observed conventions the change must follow, with example references.
+    - name: hazard_list
+      type: json
+      description: Files and invariants where a plausible change would be wrong, with evidence from history.
+    - name: verification_loop
+      type: object
+      description: The exact commands to build, test and run, confirmed working.
+  validation:
+    - check: At least one execution path is traced end to end with file and line references.
+    - check: The verification loop has been executed successfully, not merely read.
+    - check: Conventions cite concrete examples in the codebase.
+    - check: Open questions are recorded rather than resolved by assumption.
+  failure_modes:
+    - failure: Structure is inferred from directory names and is wrong.
+      mitigation: Trace a real execution path before forming structural conclusions.
+    - failure: Stale documentation is treated as current.
+      mitigation: Prefer code and history over prose whenever they conflict.
+    - failure: Orientation expands into reading the whole repository.
+      mitigation: Scope by task intent and stop when the change surface is understood.
+    - failure: A convention is invented that the project does not use.
+      mitigation: Require example references for every stated convention.
+  escalation:
+    - condition: The codebase contains credentials or personal data in the working tree.
+      action: Stop, do not copy the material, and notify the repository owner.
+    - condition: The intended change requires modifying a component owned by another team.
+      action: Escalate to the owning team before proceeding.
+  examples:
+    - title: Orienting before adding a payment provider
+      input:
+        repository: /srv/checkout-service
+        task_intent: Add a second payment provider behind the existing interface
+        depth: working
+      output:
+        traced_path: HTTP handler to provider adapter to ledger write
+        hazard_list: [Idempotency key generation has three reverts in six months]
+        verification_loop: {test: make test-integration, run: make dev}
+    - title: Survey orientation before an estimate
+      input:
+        repository: https://git.example.com/platform/scheduler
+        task_intent: Estimate the cost of multi-region support
+        depth: survey
+      output:
+        boundaries: 4 services, one shared datastore, region assumed singular in three modules
+        open_questions: [Whether the leader election library supports cross-region]
+  related_skills:
+    prerequisites: []
+    complementary: [debug-root-cause-analysis, code-review]
+    successors: [feature-implementation, technical-specification, dependency-upgrade]
+    related: [technical-due-diligence, knowledge-graph-construction]
+  complexity: intermediate
+  build_speed: 2
+  shareability: 3
+  maturity: production
+  tags: [engineering, onboarding, codebase, conventions, exploration]
+  author: Agent Skills Compendium
+  license: CC-BY-4.0
+  risk_level: low
+  required_permissions: [repo.read, shell.execute]
+  restricted_actions: [Writing to the repository during orientation, Running commands with production credentials]
+  created_at: "2025-01-08T00:00:00Z"
+  updated_at: "2025-08-29T00:00:00Z"

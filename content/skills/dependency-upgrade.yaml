@@ -1,0 +1,146 @@
+skill:
+  id: skl-dependency-upgrade
+  name: Dependency Upgrade
+  slug: dependency-upgrade
+  version: 1.0.0
+  category: coding-engineering
+  layer: L3
+  domain: software-engineering
+  description: Move a dependency to a new version with the behavioural risk identified, staged and verified rather than discovered in production.
+  purpose: >-
+    Upgrades fail on behaviour changes that are not in the changelog and on
+    transitive shifts nobody inspected. This skill separates the version bump
+    from the code adaptation, reads the actual diff of what changed, and verifies
+    against behaviour rather than against a green build.
+  trigger: >-
+    A dependency must move for a security fix, an end-of-life deadline, a needed
+    feature, or scheduled maintenance.
+  inputs:
+    - name: dependency
+      required: true
+      type: string
+      description: Package name, current version and target version.
+    - name: upgrade_reason
+      required: true
+      type: string
+      description: Why the upgrade is happening, which sets the acceptable risk and urgency.
+    - name: usage_surface
+      required: false
+      type: string
+      description: Where and how the dependency is used, if already known.
+  prerequisites:
+    - codebase-orientation
+  tools:
+    - code-search
+    - file-system
+    - build-system
+    - test-runner
+    - version-control
+    - vulnerability-scanner
+    - shell
+  dependencies:
+    - A working verification loop and a branch to work on
+  procedure:
+    - step: Map the usage surface
+      description: >-
+        Find every call site and every behaviour relied upon, including implicit
+        behaviour such as ordering, defaults and error types.
+    - step: Read the real change
+      description: >-
+        Read release notes, then the actual diff for the APIs in use. Behaviour
+        changes are routinely absent from changelogs.
+    - step: Inspect the transitive delta
+      description: >-
+        Compare the resolved dependency trees before and after; a minor bump
+        frequently moves major versions underneath.
+    - step: Upgrade in isolation first
+      description: >-
+        Bump the version alone with no code changes and record what breaks. This
+        separates required adaptation from optional refactoring.
+    - step: Adapt call sites
+      description: >-
+        Make the minimum changes required by the new version, keeping the diff
+        readable and reversible.
+    - step: Verify behaviour, not just compilation
+      description: >-
+        Run the full suite plus targeted checks on the behaviours identified in
+        step one; a passing build does not prove behavioural equivalence.
+    - step: Stage exposure
+      description: >-
+        Roll out behind a flag or through a canary for anything touching runtime
+        behaviour, with a defined rollback.
+  decision_rules:
+    - condition: The upgrade spans a major version
+      action: Treat it as a behaviour change by default and read the migration guide and diff before bumping.
+    - condition: Tests pass but the usage surface includes undocumented behaviour
+      action: Add targeted tests for that behaviour before merging.
+    - condition: The transitive tree moves a major version
+      action: Review that transitive package as if it were a direct upgrade.
+    - condition: The upgrade is a security fix and the target has breaking changes
+      action: Consider a patched fork or a backport, and escalate the trade-off rather than deferring silently.
+    - condition: Adaptation requires touching more than the call sites
+      action: Split into a preparation change and the upgrade itself.
+  outputs:
+    - name: upgrade_diff
+      type: diff
+      description: The version bump and the required adaptations, separated into reviewable commits.
+    - name: behaviour_delta
+      type: json
+      description: Behaviours that changed, how they are relied upon, and how each was verified.
+    - name: transitive_report
+      type: json
+      description: Dependency tree differences before and after.
+    - name: rollout_plan
+      type: document
+      description: Exposure staging and rollback procedure.
+  validation:
+    - check: Every relied-upon behaviour has a verification, not just a passing build.
+    - check: The transitive delta was inspected and reported.
+    - check: The version bump is separable from the code adaptation in history.
+    - check: A rollback path is stated for anything affecting runtime behaviour.
+  failure_modes:
+    - failure: A green build is taken as proof of behavioural equivalence.
+      mitigation: Verify the specific behaviours in the usage surface directly.
+    - failure: A transitive major bump breaks an unrelated part of the system.
+      mitigation: Diff resolved trees, not just the direct dependency.
+    - failure: The upgrade is bundled with refactoring and cannot be reverted cleanly.
+      mitigation: Keep the bump and the adaptation in separate commits.
+    - failure: An undocumented behaviour change surfaces only under production load.
+      mitigation: Stage exposure and monitor the affected behaviour explicitly.
+  escalation:
+    - condition: A security fix cannot be applied without breaking changes under a deadline.
+      action: Escalate the trade-off to the security and engineering owners.
+    - condition: The dependency is unmaintained and the upgrade path is closed.
+      action: Escalate a replacement decision rather than pinning indefinitely.
+  examples:
+    - title: Upgrading an HTTP client across a major version
+      input:
+        dependency: httpclient 3.4.1 to 4.0.2
+        upgrade_reason: End of life for the 3.x line
+      output:
+        behaviour_delta: [Default timeout changed from none to 30s, Error type hierarchy restructured]
+        rollout_plan: Canary at 5 percent for 24 hours
+    - title: Security patch on a serialisation library
+      input:
+        dependency: serde-lib 1.9.0 to 1.9.4
+        upgrade_reason: Deserialisation vulnerability
+      output:
+        transitive_report: {changed: 0}
+        behaviour_delta: [Strict mode now rejects duplicate keys — two fixtures updated]
+  related_skills:
+    prerequisites: [codebase-orientation]
+    complementary: [test-suite-authoring, vulnerability-triage]
+    successors: [code-review, release-readiness-check]
+    related: [feature-implementation, infrastructure-change-review]
+  complexity: intermediate
+  build_speed: 2
+  shareability: 2
+  maturity: production
+  tags: [dependencies, upgrades, maintenance, risk, engineering]
+  author: Agent Skills Compendium
+  license: CC-BY-4.0
+  risk_level: medium
+  required_permissions: [repo.write, shell.execute]
+  restricted_actions: [Upgrading directly on the default branch, Deploying without staged exposure]
+  created_at: "2025-02-06T00:00:00Z"
+  updated_at: "2025-08-07T00:00:00Z"

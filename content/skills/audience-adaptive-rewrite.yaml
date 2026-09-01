@@ -1,0 +1,141 @@
+skill:
+  id: skl-audience-adaptive-rewrite
+  name: Audience-Adaptive Rewrite
+  slug: audience-adaptive-rewrite
+  version: 1.0.0
+  category: writing-communication
+  layer: L3
+  domain: null
+  description: Re-express existing content for a different audience while holding every factual claim invariant.
+  purpose: >-
+    Rewriting for a new audience usually loses precision or invents reassurance.
+    This skill separates what may change — vocabulary, depth, framing, order —
+    from what may not — claims, numbers, caveats, scope — and verifies the
+    invariant set survived.
+  trigger: >-
+    Content that is correct for one audience must reach another with different
+    expertise, incentives or authority.
+  inputs:
+    - name: source_content
+      required: true
+      type: string
+      description: The existing content, assumed correct for its original audience.
+    - name: target_audience
+      required: true
+      type: string
+      description: Who will read it, what they know, what they need to do with it.
+    - name: purpose_shift
+      required: false
+      type: string
+      description: Whether the goal also changes — inform, persuade, instruct, obtain approval.
+    - name: hard_invariants
+      required: false
+      type: string[]
+      description: Claims, figures or caveats that must survive verbatim, such as regulated language.
+  prerequisites: []
+  tools:
+    - llm-inference
+    - document-parser
+    - document-generator
+  dependencies: []
+  procedure:
+    - step: Extract the claim set
+      description: >-
+        Enumerate every factual claim, number, qualifier and scope condition in
+        the source. This becomes the invariant checklist.
+    - step: Model the target audience
+      description: >-
+        State what they already know, what vocabulary is native to them, what
+        they will do with the content, and what they are accountable for.
+    - step: Decide depth and framing
+      description: >-
+        Choose how much mechanism to include and what frame makes the content
+        relevant to the reader's accountability, not the author's.
+    - step: Rewrite
+      description: >-
+        Re-express at the chosen depth, replacing jargon with the audience's own
+        terms rather than with vaguer language.
+    - step: Verify invariants
+      description: >-
+        Check every claim from step one against the rewrite. Missing, softened or
+        strengthened claims are defects, not stylistic choices.
+    - step: Check for invented reassurance
+      description: >-
+        Simplification frequently adds confidence the source did not have. Remove
+        any certainty not present in the original.
+    - step: Emit rewrite and diff
+      description: >-
+        Deliver the new version with a claim-level diff so a reviewer can confirm
+        nothing material moved.
+  decision_rules:
+    - condition: A claim cannot be expressed at the target audience's depth without distortion
+      action: Keep the precise form and add a plain-language gloss rather than replacing it.
+    - condition: The target audience needs a decision, not an explanation
+      action: Restructure to lead with the decision and demote mechanism to an appendix.
+    - condition: Regulated or contractual language is present
+      action: Preserve it verbatim and rewrite only the surrounding material.
+    - condition: The source is wrong for its own audience
+      action: Report the defect rather than propagating it into a new audience.
+  outputs:
+    - name: rewritten_content
+      type: document
+      description: The content re-expressed for the target audience.
+    - name: claim_diff
+      type: json
+      description: Each source claim mapped to its rewritten form, with an unchanged, rephrased or dropped verdict.
+    - name: invariant_report
+      type: object
+      description: Confirmation that hard invariants survived, with any exceptions flagged.
+  validation:
+    - check: Every claim in the source appears in the claim diff with a verdict.
+    - check: No claim is strengthened or hedged relative to the source.
+    - check: Hard invariants appear verbatim.
+    - check: Terminology used is native to the target audience, not merely simpler.
+  failure_modes:
+    - failure: Simplification silently removes a caveat and creates a false guarantee.
+      mitigation: Treat caveats as first-class claims in the invariant checklist.
+    - failure: Jargon is replaced with vagueness rather than with the audience's own terms.
+      mitigation: Model the audience's vocabulary explicitly before rewriting.
+    - failure: The rewrite is reordered but not re-framed, so it still serves the original reader.
+      mitigation: Drive framing from the target reader's accountability.
+    - failure: Regulated language is paraphrased.
+      mitigation: Detect and lock regulated blocks before rewriting.
+  escalation:
+    - condition: The rewrite would require stating something the source does not support.
+      action: Return to the author rather than filling the gap.
+    - condition: Content is legally or medically regulated.
+      action: Route to the accountable reviewer before release.
+  examples:
+    - title: Engineering post-mortem rewritten for a customer-facing update
+      input:
+        source_content: Internal post-mortem with root cause and remediation
+        target_audience: Enterprise customers' technical contacts
+      output:
+        claims_unchanged: 11
+        claims_dropped: 3
+        dropped_reason: Internal system names, not customer-relevant
+    - title: Research finding rewritten for a board pack
+      input:
+        source_content: Statistical analysis with confidence intervals
+        target_audience: Board directors, non-technical, deciding on investment
+        purpose_shift: obtain approval
+      output:
+        claims_unchanged: 8
+        invariant_report: {intervals_preserved: true, certainty_added: none}
+  related_skills:
+    prerequisites: []
+    complementary: [structured-critique, executive-brief]
+    successors: []
+    related: [content-brief-production, document-restructuring]
+  complexity: intermediate
+  build_speed: 3
+  shareability: 3
+  maturity: production
+  tags: [writing, audience, rewriting, fidelity, communication]
+  author: Agent Skills Compendium
+  license: CC-BY-4.0
+  risk_level: medium
+  required_permissions: [document.write]
+  restricted_actions: [Paraphrasing regulated or contractual language, Adding certainty absent from the source]
+  created_at: "2025-02-11T00:00:00Z"
+  updated_at: "2025-07-18T00:00:00Z"

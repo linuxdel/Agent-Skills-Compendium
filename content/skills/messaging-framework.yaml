@@ -1,0 +1,143 @@
+skill:
+  id: skl-messaging-framework
+  name: Messaging Framework
+  slug: messaging-framework
+  version: 1.0.0
+  category: marketing-content
+  layer: L1
+  domain: null
+  description: Convert a position into a message hierarchy that survives being repeated by people who did not write it.
+  purpose: >-
+    Messaging fails when every team invents its own version because the framework
+    gave them abstractions rather than sentences. This skill produces a small,
+    ordered set of claims with proof attached to each, written in language a
+    salesperson or a customer would actually use.
+  trigger: >-
+    A position exists but is being expressed inconsistently across teams,
+    channels or campaigns.
+  inputs:
+    - name: positioning
+      required: true
+      type: string
+      description: The established position, including competitive alternative and differentiators.
+    - name: audiences
+      required: true
+      type: string[]
+      description: The distinct audiences, since one hierarchy per audience is usually required.
+    - name: proof_assets
+      required: true
+      type: string[]
+      description: Evidence available — customer results, benchmarks, references, certifications.
+    - name: channels
+      required: false
+      type: string[]
+      description: Where the messaging will be used, which constrains length and form.
+  prerequisites:
+    - positioning-framework
+  tools:
+    - llm-inference
+    - document-generator
+    - web-search
+  dependencies:
+    - A completed positioning with tested exclusivity claims
+  procedure:
+    - step: Write the single core claim
+      description: >-
+        One sentence stating what the product does for whom and why it is better
+        than the alternative. Everything else supports this.
+    - step: Derive three supporting claims
+      description: >-
+        Choose the three claims that most efficiently make the core claim
+        believable. A fourth usually indicates the first three are weak.
+    - step: Attach proof to every claim
+      description: >-
+        Pair each claim with specific evidence. Claims without proof are removed,
+        not softened.
+    - step: Write in the buyer's language
+      description: >-
+        Use the words buyers use for the problem, taken from calls, tickets and
+        reviews rather than from internal vocabulary.
+    - step: Adapt per audience
+      description: >-
+        Reframe the same claims for each audience's accountability without
+        changing what is being claimed.
+    - step: Write the objection responses
+      description: >-
+        For each claim, write the honest response to the strongest objection it
+        provokes.
+    - step: Provide usable artifacts
+      description: >-
+        Deliver ready-to-use sentences at several lengths, since teams reuse what
+        is usable and rewrite what is abstract.
+  decision_rules:
+    - condition: A claim has no proof asset
+      action: Remove it and record what proof would be required to make it usable.
+    - condition: The core claim is true of competitors
+      action: Return to positioning; messaging cannot fix an undifferentiated position.
+    - condition: Audiences require different claims rather than different framing
+      action: Build separate hierarchies; forcing one hierarchy weakens both.
+    - condition: A claim uses internal vocabulary
+      action: Rewrite it in buyer language sourced from actual buyer conversations.
+  outputs:
+    - name: message_hierarchy
+      type: document
+      description: Core claim, supporting claims, proof, per-audience framing.
+    - name: proof_map
+      type: json
+      description: Each claim mapped to its evidence and the strength of that evidence.
+    - name: objection_responses
+      type: json
+      description: Strongest objection per claim and the honest response.
+    - name: ready_copy
+      type: json
+      description: Approved sentences at several lengths for reuse across channels.
+  validation:
+    - check: Every claim has an attached proof asset.
+    - check: The core claim survives the exclusivity test against competitors.
+    - check: Language is sourced from buyer vocabulary, not internal terms.
+    - check: Ready-to-use copy exists at more than one length.
+  failure_modes:
+    - failure: The framework is abstract and every team writes their own version.
+      mitigation: Deliver literal sentences, not themes.
+    - failure: Claims are aspirational and cannot be substantiated in a sales conversation.
+      mitigation: Require proof assets and remove unproven claims.
+    - failure: Internal vocabulary makes messaging invisible to buyers searching for their problem.
+      mitigation: Source language from calls, tickets and reviews.
+    - failure: One hierarchy is stretched across audiences with genuinely different problems.
+      mitigation: Split into separate hierarchies when claims differ, not just framing.
+  escalation:
+    - condition: A claim would require substantiation the company cannot provide if challenged.
+      action: Escalate to legal before publication; unsubstantiated claims carry regulatory risk.
+    - condition: Messaging conflicts with contractual commitments to existing customers.
+      action: Escalate to legal and customer success.
+  examples:
+    - title: Messaging for a compliance automation product
+      input:
+        audiences: [Compliance lead, CISO, CFO]
+        proof_assets: [Two customer case studies, SOC 2 report, Time-to-evidence benchmark]
+      output:
+        core_claim: Control failures surface in a day instead of at audit
+        objection_responses: [Auditor acceptance — answered with named audit firm references]
+    - title: Messaging for a developer platform
+      input:
+        audiences: [Platform engineer, Engineering director]
+      output:
+        supporting_claims: 3
+        ready_copy: {lengths: [12 words, 40 words, 120 words]}
+  related_skills:
+    prerequisites: [positioning-framework]
+    complementary: [content-brief-production, audience-adaptive-rewrite]
+    successors: [content-brief-production, campaign-performance-readout]
+    related: [executive-brief, account-research]
+  complexity: intermediate
+  build_speed: 3
+  shareability: 3
+  maturity: beta
+  tags: [marketing, messaging, claims, proof, positioning]
+  author: Agent Skills Compendium
+  license: CC-BY-4.0
+  risk_level: medium
+  required_permissions: [document.write]
+  restricted_actions: [Publishing claims without substantiation]
+  created_at: "2025-03-01T00:00:00Z"
+  updated_at: "2025-07-25T00:00:00Z"

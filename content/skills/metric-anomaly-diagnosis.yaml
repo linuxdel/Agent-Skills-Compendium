@@ -1,0 +1,156 @@
+skill:
+  id: skl-metric-anomaly-diagnosis
+  name: Metric Anomaly Diagnosis
+  slug: metric-anomaly-diagnosis
+  version: 1.2.0
+  category: data-analysis
+  layer: L1
+  domain: null
+  description: Explain why a metric moved, separating instrumentation artifacts, mix shifts and genuine behaviour change.
+  purpose: >-
+    "Why did this drop?" is the most common analytical request and the one most
+    often answered with a plausible story. This skill enforces an elimination
+    order — measurement first, then composition, then behaviour — so that the
+    cheapest and most common explanations are ruled out before a narrative is
+    constructed.
+  trigger: >-
+    A metric moves beyond its normal range, or a stakeholder asks what caused a
+    change.
+  inputs:
+    - name: metric
+      required: true
+      type: string
+      description: The metric and its canonical definition.
+    - name: movement
+      required: true
+      type: string
+      description: The observed change, its magnitude and the period it occurred in.
+    - name: baseline
+      required: false
+      type: string
+      description: What normal looks like, including seasonality.
+    - name: known_changes
+      required: false
+      type: string[]
+      description: Deploys, campaigns, pricing changes or incidents in the window.
+  prerequisites:
+    - dataset-profiling
+    - metric-definition
+  tools:
+    - sql-client
+    - dataframe-runtime
+    - statistics-engine
+    - chart-renderer
+    - observability
+    - llm-inference
+  dependencies:
+    - A canonical metric definition and access to its underlying data
+  procedure:
+    - step: Confirm the movement is real
+      description: >-
+        Check the change against normal variation and seasonality before
+        investigating. Many reported anomalies are within range.
+    - step: Rule out measurement
+      description: >-
+        Check for pipeline failures, late data, schema changes, tracking
+        regressions and definition changes. This explains a large share of moves
+        and costs the least to test.
+    - step: Rule out composition
+      description: >-
+        Decompose by segment, channel, platform and cohort to test whether the
+        aggregate moved because the mix moved while each segment held steady.
+    - step: Localise the change
+      description: >-
+        Narrow to the smallest segment and the narrowest time window that
+        contains the movement. A change that is everywhere is a different class
+        of cause from one that is in a single segment.
+    - step: Test candidate causes against timing
+      description: >-
+        Align each candidate cause with the exact onset. Causes that predate or
+        postdate the onset are eliminated regardless of plausibility.
+    - step: Quantify contributions
+      description: >-
+        Attribute the movement across the surviving causes and state the
+        unexplained residual rather than forcing attribution to 100 percent.
+    - step: State confidence and next tests
+      description: >-
+        Report the explanation with its confidence and name the test that would
+        confirm or refute it.
+  decision_rules:
+    - condition: The movement is within historical variation
+      action: Report no anomaly and stop; do not construct an explanation for noise.
+    - condition: The onset is a sharp step at a boundary
+      action: Prioritise measurement and deployment causes over behavioural ones.
+    - condition: Every segment holds steady but the aggregate moved
+      action: Report a mix shift, not a behaviour change.
+    - condition: Multiple candidate causes align with the onset
+      action: Report all with contributions; do not select the most narratively satisfying.
+    - condition: The residual exceeds half the movement
+      action: Report the diagnosis as incomplete rather than claiming a cause.
+  outputs:
+    - name: diagnosis
+      type: document
+      description: What moved, when, in which segment, and the surviving explanations.
+    - name: contribution_breakdown
+      type: json
+      description: Attribution across causes, including the unexplained residual.
+    - name: eliminated_causes
+      type: json
+      description: Candidates ruled out and the evidence that ruled them out.
+    - name: confirmation_tests
+      type: string[]
+      description: Specific tests that would confirm or refute the leading explanation.
+  validation:
+    - check: Measurement causes were tested before behavioural ones.
+    - check: Segment decomposition was run and mix shift explicitly ruled in or out.
+    - check: Every surviving cause aligns with the observed onset timing.
+    - check: The residual is reported and not silently absorbed.
+  failure_modes:
+    - failure: A plausible business narrative is attached to a tracking bug.
+      mitigation: Enforce measurement elimination as the first mandatory step.
+    - failure: A mix shift is reported as a behaviour change and drives a wrong intervention.
+      mitigation: Always decompose by segment before interpreting the aggregate.
+    - failure: Noise is explained as signal.
+      mitigation: Test against historical variation before investigating.
+    - failure: Attribution sums to 100 percent by construction and hides ignorance.
+      mitigation: Report residual explicitly and cap confidence when it is large.
+  escalation:
+    - condition: The movement indicates data loss, breach or financial misstatement.
+      action: Escalate immediately to the data owner and stop independent investigation.
+    - condition: The metric feeds external reporting and the cause is measurement error.
+      action: Escalate to the reporting owner for restatement handling.
+  examples:
+    - title: Diagnosing a signup conversion drop
+      input:
+        metric: Visitor-to-signup conversion
+        movement: Down 18 percent week over week
+        known_changes: [Marketing site redesign, Consent banner update]
+      output:
+        cause: Consent banner blocked the analytics call on mobile Safari
+        class: measurement
+        residual: 3 percent
+    - title: Diagnosing rising average order value
+      input:
+        metric: Average order value
+        movement: Up 11 percent month over month
+      output:
+        cause: Mix shift toward enterprise segment; per-segment AOV flat
+        class: composition
+        confirmation_tests: [Recompute AOV holding segment weights at prior month]
+  related_skills:
+    prerequisites: [dataset-profiling, metric-definition]
+    complementary: [statistical-significance-test, cohort-analysis]
+    successors: [executive-brief, variance-analysis]
+    related: [production-incident-diagnosis, debug-root-cause-analysis]
+  complexity: advanced
+  build_speed: 2
+  shareability: 3
+  maturity: production
+  tags: [analytics, diagnosis, causality, anomaly, decomposition]
+  author: Agent Skills Compendium
+  license: CC-BY-4.0
+  risk_level: medium
+  required_permissions: [data.read]
+  restricted_actions: [Asserting causation from correlation alone]
+  created_at: "2025-01-19T00:00:00Z"
+  updated_at: "2025-08-28T00:00:00Z"

@@ -1,0 +1,33 @@
+# Agent Skills Compendium
+# Copyright © 2026 Jerson Boyd Milan
+#
+cff-version: 1.2.0
+title: "Agent Skills Compendium"
+message: "If you use or reference this project, please cite the original project and author."
+type: software
+
+authors:
+  - family-names: "Milan"
+    given-names: "Jerson Boyd"
+    website: "https://jersonboydmilan.com/"
+
+abstract: >-
+  A structured framework for defining, organizing, discovering, and composing
+  reusable capabilities for AI agents, built on the distinction between a tool
+  (something an agent can use) and a skill (something an agent knows how to
+  accomplish). Comprises a twenty-category taxonomy, a five-layer architectural
+  model, and a canonical machine-readable skill specification.
+
+keywords:
+  - "AI agents"
+  - "agent skills"
+  - "capability registry"
+  - "agent architecture"
+  - "skill taxonomy"
+  - "multi-agent systems"
+
+repository-code: "https://github.com/linuxdel/Agent-Skills-Compendium"
+url: "https://jersonboydmilan.com/"
+license: MIT
+version: "0.1.0"
+date-released: "2026-09-01"

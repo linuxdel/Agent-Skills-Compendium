@@ -1,0 +1,149 @@
+skill:
+  id: skl-infrastructure-change-review
+  name: Infrastructure Change Review
+  slug: infrastructure-change-review
+  version: 1.0.0
+  category: devops-infrastructure
+  layer: L4
+  domain: operations
+  description: Review an infrastructure change by reading its actual plan output, focusing on replacements, deletions and blast radius.
+  purpose: >-
+    Infrastructure code reviews read like application reviews and miss the thing
+    that matters: what the plan will actually do. This skill reviews the plan
+    rather than the template, identifies resources being replaced or destroyed,
+    and checks the failure and rollback behaviour of the specific change.
+  trigger: >-
+    An infrastructure-as-code change is proposed, or a manual infrastructure
+    change is requested.
+  inputs:
+    - name: change
+      required: true
+      type: string
+      description: The infrastructure code diff.
+    - name: plan_output
+      required: true
+      type: string
+      description: The generated plan showing creates, updates, replacements and destroys.
+    - name: environment
+      required: true
+      type: string
+      description: Which environment, and what runs on the affected resources.
+    - name: change_window
+      required: false
+      type: string
+      description: When it will be applied and what else is happening then.
+  prerequisites: []
+  tools:
+    - iac-engine
+    - cloud-api
+    - code-search
+    - observability
+    - llm-inference
+  dependencies:
+    - A current plan generated against the actual target state
+  procedure:
+    - step: Confirm the plan is current
+      description: >-
+        Verify the plan was generated against present state. Stale plans hide
+        drift and produce surprises at apply time.
+    - step: Classify every action
+      description: >-
+        Separate creates, in-place updates, replacements and destroys.
+        Replacements and destroys carry almost all the risk.
+    - step: Trace what depends on replaced resources
+      description: >-
+        For each replacement or destroy, identify what depends on it and what
+        happens during the gap.
+    - step: Check statefulness and data
+      description: >-
+        Determine whether any affected resource holds state that would not
+        survive replacement.
+    - step: Review security-relevant changes
+      description: >-
+        Examine changes to network exposure, identity policy, encryption and
+        logging separately from functional changes.
+    - step: Assess the failure path
+      description: >-
+        Determine what state a partially applied change leaves behind and how it
+        is recovered.
+    - step: Check drift and manual changes
+      description: >-
+        Look for resources modified outside the code, which the apply will revert.
+    - step: Issue a verdict with conditions
+      description: >-
+        Approve, approve with conditions, or block, naming the specific risk.
+  decision_rules:
+    - condition: The plan shows a replacement of a stateful resource
+      action: Block until a data preservation and migration path is documented.
+    - condition: The plan widens network exposure or identity permissions
+      action: Escalate for security review regardless of the change's purpose.
+    - condition: The plan differs from what the diff appears to do
+      action: Trust the plan; investigate the discrepancy before approval.
+    - condition: Drift is detected
+      action: Resolve the drift deliberately before applying, rather than letting the apply revert it silently.
+    - condition: A partial apply would leave an unrecoverable state
+      action: Split the change into independently appliable steps.
+  outputs:
+    - name: review_findings
+      type: json
+      description: Findings with the plan action, affected resources, risk and recommendation.
+    - name: risk_summary
+      type: document
+      description: Replacements, destroys, exposure changes and their consequences.
+    - name: verdict
+      type: enum
+      description: Approve, approve with conditions, or block.
+    - name: apply_conditions
+      type: string[]
+      description: Conditions and sequencing required at apply time.
+  validation:
+    - check: The review is based on a current plan, not on the code alone.
+    - check: Every replacement and destroy is traced to its dependents.
+    - check: Security-relevant changes are reviewed separately.
+    - check: The partial-apply failure state is assessed.
+  failure_modes:
+    - failure: The template looks safe and the plan replaces a database.
+      mitigation: Review the plan output, always.
+    - failure: A stale plan hides drift and the apply makes unexpected changes.
+      mitigation: Require a freshly generated plan.
+    - failure: A permissions change ships inside a functional change and widens access.
+      mitigation: Review identity and network changes as a separate category.
+    - failure: A partial apply leaves resources orphaned with no recovery path.
+      mitigation: Assess the failure path and split changes that cannot fail safely.
+  escalation:
+    - condition: The change would destroy or replace a resource holding production data.
+      action: Escalate to the data owner; do not approve on the strength of a backup claim alone.
+    - condition: The change affects security controls or audit logging.
+      action: Escalate to security review before approval.
+  examples:
+    - title: Reviewing a database parameter change
+      input:
+        plan_output: 1 to update in place, 0 to add, 0 to destroy
+        environment: production
+      output:
+        verdict: approve with conditions
+        apply_conditions: [Apply during the maintenance window; parameter requires a restart]
+    - title: Reviewing a network module refactor
+      input:
+        plan_output: 12 to add, 4 to change, 9 to destroy
+        environment: production
+      output:
+        verdict: block
+        review_findings: [Subnet replacement would recreate the load balancer and change its address]
+  related_skills:
+    prerequisites: []
+    complementary: [dry-run-rehearsal, release-readiness-check, threat-model-construction]
+    successors: [capacity-forecasting]
+    related: [dependency-upgrade, production-incident-diagnosis]
+  complexity: advanced
+  build_speed: 3
+  shareability: 2
+  maturity: production
+  tags: [infrastructure, iac, review, blast-radius, operations]
+  author: Agent Skills Compendium
+  license: CC-BY-4.0
+  risk_level: high
+  required_permissions: [iac.plan, cloud.read]
+  restricted_actions: [Applying the change, Approving stateful resource replacement without a data path]
+  created_at: "2025-03-18T00:00:00Z"
+  updated_at: "2025-08-14T00:00:00Z"

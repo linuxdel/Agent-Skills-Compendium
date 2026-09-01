@@ -1,0 +1,145 @@
+skill:
+  id: skl-executive-brief
+  name: Executive Brief
+  slug: executive-brief
+  version: 1.3.0
+  category: writing-communication
+  layer: L3
+  domain: null
+  description: Compress a body of analysis into a one-page brief that leads with the decision, not with the background.
+  purpose: >-
+    Executives do not read to learn; they read to decide. This skill inverts the
+    default document structure — recommendation first, then the reasoning that
+    would change it, then the evidence — and enforces a length ceiling that
+    forces genuine prioritisation rather than compression of everything.
+  trigger: >-
+    Analysis is complete and a decision-maker with limited attention must act on it.
+  inputs:
+    - name: analysis
+      required: true
+      type: string
+      description: The underlying analysis, findings or evidence to compress.
+    - name: decision
+      required: true
+      type: string
+      description: The specific decision the reader must make. A brief without a decision is a report.
+    - name: reader
+      required: true
+      type: string
+      description: Role, prior context and what they already believe. Determines what can be assumed.
+    - name: length_ceiling
+      required: false
+      type: string
+      description: Hard limit, defaulting to one page or roughly 400 words.
+    - name: constraints
+      required: false
+      type: string[]
+      description: Known constraints such as budget, timing or political sensitivity.
+  prerequisites: []
+  tools:
+    - llm-inference
+    - document-generator
+    - file-system
+  dependencies:
+    - Completed analysis; this skill compresses, it does not investigate
+  procedure:
+    - step: Extract the decision
+      description: >-
+        State the decision as a choice between named options with a deadline. If
+        the analysis does not support a choice, say so and stop.
+    - step: Write the recommendation first
+      description: >-
+        Open with what should be done and the single strongest reason. Everything
+        after this exists to let the reader disagree intelligently.
+    - step: Name the three load-bearing reasons
+      description: >-
+        Give the reasons that actually carry the recommendation. A fourth reason
+        usually indicates the first three are weak.
+    - step: State what would change the recommendation
+      description: >-
+        Name the conditions or evidence that would reverse it. This is the section
+        experienced readers check first.
+    - step: Surface the risk the reader will ask about
+      description: >-
+        Pre-empt the obvious objection rather than waiting to be asked in the room.
+    - step: Cut to the ceiling
+      description: >-
+        Remove background the reader already has, hedges that add no information,
+        and any sentence that does not serve the decision.
+    - step: Attach depth by reference
+      description: >-
+        Link the full analysis rather than summarising it; the brief is an
+        entry point, not a replacement.
+  decision_rules:
+    - condition: The analysis does not support a single recommendation
+      action: Present two options with their conditions and say explicitly that the choice is the reader's.
+    - condition: The reader lacks context the brief assumes
+      action: Add one context line, not a background section; if more is needed the audience is wrong for a brief.
+    - condition: A material uncertainty exists
+      action: State it in the what-would-change-this section rather than hedging the recommendation itself.
+    - condition: The brief exceeds the ceiling after cutting
+      action: Narrow the decision scope rather than raising the ceiling.
+  outputs:
+    - name: brief
+      type: document
+      description: One page — recommendation, reasons, what would change it, risk, next step.
+    - name: decision_statement
+      type: string
+      description: The decision framed as a choice with a deadline.
+    - name: appendix_links
+      type: string[]
+      description: References to full analysis and source material.
+  validation:
+    - check: The first sentence contains the recommendation.
+    - check: The brief is within the length ceiling.
+    - check: The what-would-change-this section names falsifiable conditions.
+    - check: No claim appears that is not supported in the linked analysis.
+    - check: A concrete next step with an owner is present.
+  failure_modes:
+    - failure: The brief opens with background and buries the recommendation on page two.
+      mitigation: Enforce recommendation-first structurally, not stylistically.
+    - failure: Hedging language makes the recommendation unactionable.
+      mitigation: Move all uncertainty into the designated section; the recommendation itself is unhedged.
+    - failure: The full analysis is compressed uniformly rather than prioritised.
+      mitigation: Cut whole sections, never sentences from every section.
+    - failure: Confidence is manufactured by omitting the strongest counterargument.
+      mitigation: Require the risk section to contain the objection the reader is most likely to raise.
+  escalation:
+    - condition: The decision requires authority the reader does not hold.
+      action: Name the correct decision-maker in the brief and route accordingly.
+    - condition: The analysis is materially incomplete for the stakes involved.
+      action: Deliver a status note rather than a recommendation, and say what is missing.
+  examples:
+    - title: Vendor consolidation decision for a CTO
+      input:
+        decision: Consolidate three observability vendors onto one contract at renewal
+        reader: CTO, has seen the cost analysis, has not seen the migration risk
+      output:
+        recommendation: Consolidate onto Vendor B, staged over two quarters
+        would_change_it: [If Vendor B's trace retention cannot reach 30 days at our volume]
+        next_step: Platform lead to run a 30-day retention test before the 14 March renewal date
+    - title: Hiring pause recommendation for a founder
+      input:
+        decision: Whether to pause engineering hiring for two quarters
+        reader: Founder and CEO, holds the runway model already
+      output:
+        recommendation: Pause backfills, continue two platform roles
+        would_change_it: [If Q3 net revenue retention holds above 105 percent]
+        next_step: Finance to re-run runway at the July close
+  related_skills:
+    prerequisites: []
+    complementary: [evidence-synthesis, risk-weighted-recommendation, structured-critique]
+    successors: [stakeholder-mapping]
+    related: [situation-assessment, audience-adaptive-rewrite, competitive-intelligence-report]
+  complexity: intermediate
+  build_speed: 3
+  shareability: 3
+  maturity: production
+  tags: [writing, executive, decision, compression, communication]
+  author: Agent Skills Compendium
+  license: CC-BY-4.0
+  risk_level: low
+  required_permissions: [document.write]
+  restricted_actions: [Publishing a recommendation the underlying analysis does not support]
+  created_at: "2025-01-09T00:00:00Z"
+  updated_at: "2025-08-27T00:00:00Z"

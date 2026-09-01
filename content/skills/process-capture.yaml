@@ -1,0 +1,145 @@
+skill:
+  id: skl-process-capture
+  name: Process Capture
+  slug: process-capture
+  version: 1.0.0
+  category: workflow-automation
+  layer: L2
+  domain: null
+  description: Document how a process actually runs, including the exceptions and workarounds that the official version omits.
+  purpose: >-
+    Automation built from the official process breaks on the exceptions that make
+    up most of the real work. This skill captures the process as executed —
+    branches, judgement calls, informal handoffs and workarounds — and marks
+    which steps carry tacit knowledge that resists automation.
+  trigger: >-
+    A process is about to be automated, transferred, audited or improved.
+  inputs:
+    - name: process_name
+      required: true
+      type: string
+      description: The process as its practitioners name it.
+    - name: practitioners
+      required: true
+      type: string
+      description: Who performs it, including the person who handles the hard cases.
+    - name: boundaries
+      required: true
+      type: string
+      description: What triggers the process and what marks it complete.
+    - name: existing_documentation
+      required: false
+      type: string
+      description: The official version, treated as a hypothesis rather than as fact.
+  prerequisites: []
+  tools:
+    - document-parser
+    - llm-inference
+    - file-system
+    - observability
+    - document-generator
+  dependencies:
+    - Access to practitioners or to system traces of real executions
+  procedure:
+    - step: Establish trigger and completion
+      description: >-
+        Define precisely what starts the process and what state marks it done.
+        Fuzzy boundaries produce automation that runs at the wrong time.
+    - step: Trace the happy path
+      description: >-
+        Record the ordinary path step by step with the system, the actor and the
+        artifact at each step.
+    - step: Hunt the exceptions
+      description: >-
+        Ask what happens when each step fails or receives unexpected input. The
+        exception paths are where automation actually fails.
+    - step: Find the workarounds
+      description: >-
+        Identify the informal steps practitioners take outside the official
+        process. These usually encode a real constraint.
+    - step: Mark the judgement points
+      description: >-
+        Identify steps that require a decision rather than a rule, and capture the
+        criteria practitioners actually use.
+    - step: Measure volume and cost
+      description: >-
+        Record frequency, duration and error rate per path, so the exception paths
+        can be prioritised by their real share of the work.
+    - step: Identify controls and obligations
+      description: >-
+        Note approvals, segregation of duties, retention requirements and
+        regulatory constraints that any automation must preserve.
+  decision_rules:
+    - condition: Documentation and practitioner accounts diverge
+      action: Record the executed process as authoritative and flag the divergence.
+    - condition: A step depends on tacit judgement
+      action: Mark it as judgement, capture the criteria, and do not assume it can be automated.
+    - condition: Exception paths account for a large share of volume
+      action: Treat them as primary paths; a happy-path automation will not help.
+    - condition: A workaround exists around a control
+      action: Escalate rather than encoding the workaround into an automated process.
+  outputs:
+    - name: process_map
+      type: document
+      description: Trigger, steps, actors, systems, artifacts, branches and completion.
+    - name: exception_catalogue
+      type: json
+      description: Each exception, its frequency, its handling and its cost.
+    - name: judgement_points
+      type: json
+      description: Steps requiring decisions, with the criteria practitioners apply.
+    - name: control_requirements
+      type: json
+      description: Approvals, segregation and retention obligations any automation must preserve.
+  validation:
+    - check: Every branch terminates in a defined end state.
+    - check: Exception paths are catalogued with frequencies, not merely mentioned.
+    - check: Judgement points are distinguished from rule-based steps.
+    - check: The map reflects observed or practitioner-reported execution, not the official document.
+  failure_modes:
+    - failure: The official process is documented and the real one is missed.
+      mitigation: Treat existing documentation as a hypothesis and verify against practitioners or traces.
+    - failure: Exceptions are omitted and automation fails on most real cases.
+      mitigation: Make exception hunting a mandatory step with frequency data.
+    - failure: A judgement step is automated as a rule and produces confidently wrong outcomes.
+      mitigation: Mark judgement points explicitly and require human retention or explicit criteria.
+    - failure: A control is automated away because nobody knew why it existed.
+      mitigation: Capture control requirements and their origin before any redesign.
+  escalation:
+    - condition: The captured process reveals a control failure or a compliance breach.
+      action: Escalate to the control owner immediately rather than documenting it as a step.
+    - condition: The process handles regulated or personal data in an undocumented way.
+      action: Escalate to privacy or compliance before proceeding.
+  examples:
+    - title: Capturing invoice approval before automation
+      input:
+        process_name: Supplier invoice approval
+        practitioners: AP clerk, finance manager, the person who handles disputes
+      output:
+        exception_share: 41 percent of volume takes an exception path
+        judgement_points: [Deciding whether a price variance is acceptable]
+        control_requirements: [Two-person approval above 10k]
+    - title: Capturing customer offboarding
+      input:
+        process_name: Enterprise customer offboarding
+        boundaries: Trigger is signed termination; complete when data is deleted and confirmed
+      output:
+        workarounds: [Support manually extends access during transition, undocumented]
+        control_requirements: [Deletion certificate within 30 days]
+  related_skills:
+    prerequisites: []
+    complementary: [automation-opportunity-assessment, runbook-authoring]
+    successors: [idempotent-integration-design, automation-opportunity-assessment]
+    related: [control-evidence-collection, taxonomy-design]
+  complexity: intermediate
+  build_speed: 2
+  shareability: 2
+  maturity: production
+  tags: [process, capture, automation, exceptions, operations]
+  author: Agent Skills Compendium
+  license: CC-BY-4.0
+  risk_level: low
+  required_permissions: [document.write, logs.read]
+  restricted_actions: [Encoding a control workaround into an automated process]
+  created_at: "2025-01-25T00:00:00Z"
+  updated_at: "2025-07-12T00:00:00Z"

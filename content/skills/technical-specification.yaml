@@ -1,0 +1,152 @@
+skill:
+  id: skl-technical-specification
+  name: Technical Specification
+  slug: technical-specification
+  version: 1.1.0
+  category: writing-communication
+  layer: L3
+  domain: software-engineering
+  description: Turn an intent into a specification precise enough that two independent engineers would build the same thing.
+  purpose: >-
+    A specification's value is measured by the disagreements it prevents. This
+    skill drives every section from the decisions that must be made before code,
+    resolves them explicitly, and records what was deliberately left open.
+  trigger: >-
+    Work is large enough, shared enough or risky enough that ambiguity would be
+    discovered during implementation rather than before it.
+  inputs:
+    - name: intent
+      required: true
+      type: string
+      description: What the change should accomplish, in problem terms.
+    - name: system_context
+      required: true
+      type: string
+      description: The existing system it must fit into — interfaces, data, invariants, deployment.
+    - name: constraints
+      required: false
+      type: string[]
+      description: Performance, compatibility, regulatory, timeline or staffing constraints.
+    - name: audience
+      required: false
+      type: string
+      description: Implementers, reviewers or both. Determines the depth of rationale included.
+  prerequisites:
+    - codebase-orientation
+  tools:
+    - code-search
+    - file-system
+    - llm-inference
+    - document-generator
+    - issue-tracker
+  dependencies:
+    - Access to the codebase or interface definitions the change touches
+  procedure:
+    - step: State the problem and the non-goals
+      description: >-
+        Define what is being solved and, equally, what is explicitly out of scope.
+        Non-goals prevent more rework than goals do.
+    - step: Enumerate the decisions
+      description: >-
+        List every decision an implementer would otherwise make alone — data
+        model, interface shape, failure semantics, migration path, ownership.
+    - step: Resolve each decision with a rationale
+      description: >-
+        Choose, and record the alternative rejected and why. Unrationalised
+        decisions get relitigated in review.
+    - step: Define interfaces concretely
+      description: >-
+        Give exact signatures, schemas, status codes and error shapes. Prose
+        descriptions of interfaces are where specs fail.
+    - step: Specify failure behaviour
+      description: >-
+        Define what happens on timeout, partial write, duplicate delivery and
+        downstream unavailability. Most production defects live here.
+    - step: Define the migration and rollback
+      description: >-
+        State how the system moves from current to target state, whether the
+        change is reversible, and how it is reversed.
+    - step: Write the acceptance criteria
+      description: >-
+        Express acceptance as observable conditions a test could assert, not as
+        an intent restatement.
+    - step: Record open questions with owners
+      description: >-
+        Any unresolved decision gets a named owner and a resolution date, or the
+        spec is not ready.
+  decision_rules:
+    - condition: A decision cannot be resolved without information nobody has
+      action: Record it as an open question with an owner and a date; do not paper over it with a default.
+    - condition: The change alters a public interface
+      action: Add a compatibility section covering versioning, deprecation and consumer migration.
+    - condition: The change is irreversible once deployed
+      action: Require an explicit rollback-impossible statement and a staged exposure plan.
+    - condition: Two reasonable implementations satisfy the spec differently
+      action: Tighten the spec until they converge, or state that either is acceptable.
+  outputs:
+    - name: specification
+      type: document
+      description: Problem, non-goals, decisions with rationale, interfaces, failure behaviour, migration, acceptance criteria.
+    - name: decision_log
+      type: json
+      description: Each decision, the option chosen, the alternatives rejected and the reason.
+    - name: open_questions
+      type: json
+      description: Unresolved items with owner and due date.
+    - name: acceptance_criteria
+      type: string[]
+      description: Observable, testable conditions for done.
+  validation:
+    - check: Every interface is specified with exact types and error shapes.
+    - check: Failure behaviour is defined for timeout, partial failure and duplicate delivery.
+    - check: Every acceptance criterion is observable and testable.
+    - check: Every open question has an owner and a date.
+    - check: Non-goals are present and non-empty.
+  failure_modes:
+    - failure: The spec restates the intent in more words and decides nothing.
+      mitigation: Require the decision log to be non-empty and each entry to name a rejected alternative.
+    - failure: Interfaces are described in prose and implemented inconsistently.
+      mitigation: Require literal schemas and signatures, not descriptions.
+    - failure: Happy path is specified and failure behaviour is left to the implementer.
+      mitigation: Treat the failure-behaviour step as mandatory and reviewable.
+    - failure: Open questions are silently resolved by a default nobody agreed to.
+      mitigation: Block sign-off while open questions lack owners.
+  escalation:
+    - condition: A decision crosses a team ownership boundary.
+      action: Escalate to the owning team before resolving it in the spec.
+    - condition: The change carries regulatory, privacy or safety implications.
+      action: Route to the accountable reviewer before implementation starts.
+  examples:
+    - title: Specifying an idempotent webhook receiver
+      input:
+        intent: Accept partner webhooks without duplicate side effects
+        system_context: Existing order service, at-least-once delivery from partner
+      output:
+        decisions: 6
+        open_questions: 1
+        acceptance_criteria: [Duplicate delivery within 24h produces exactly one order state transition]
+    - title: Specifying a schema migration with zero downtime
+      input:
+        intent: Split the customers table into customers and billing_profiles
+        constraints: [No write downtime, Reversible for 14 days]
+      output:
+        decisions: 9
+        migration: Expand-migrate-contract across three releases
+        rollback: Reversible until the contract release
+  related_skills:
+    prerequisites: [codebase-orientation]
+    complementary: [structured-critique, test-suite-authoring, architecture-decision-record]
+    successors: [feature-implementation, code-review]
+    related: [runbook-authoring, idempotent-integration-design]
+  complexity: advanced
+  build_speed: 2
+  shareability: 3
+  maturity: production
+  tags: [writing, specification, engineering, decisions, interfaces]
+  author: Agent Skills Compendium
+  license: CC-BY-4.0
+  risk_level: low
+  required_permissions: [repo.read, document.write]
+  restricted_actions: [Marking a spec ready while open questions lack owners]
+  created_at: "2025-01-27T00:00:00Z"
+  updated_at: "2025-08-14T00:00:00Z"

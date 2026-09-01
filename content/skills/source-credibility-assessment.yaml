@@ -1,0 +1,152 @@
+skill:
+  id: skl-source-credibility-assessment
+  name: Source Credibility Assessment
+  slug: source-credibility-assessment
+  version: 1.1.0
+  category: research-intelligence
+  layer: L2
+  domain: null
+  description: Classify a source by class, independence, incentive and recency, and assign a defensible trust score before its content is used.
+  purpose: >-
+    Retrieval systems rank by relevance, not by trustworthiness, so an agent that
+    treats retrieval order as credibility order will confidently repeat a
+    marketing page or a content farm. This skill inserts an explicit
+    credibility judgement between retrieval and use, and makes that judgement
+    inspectable.
+  trigger: >-
+    Before any retrieved source is used to support a claim in a deliverable, and
+    whenever two sources disagree.
+  inputs:
+    - name: source_url
+      required: true
+      type: string
+      description: The canonical URL or document identifier of the source.
+    - name: claim
+      required: true
+      type: string
+      description: The specific claim the source is being used to support. Credibility is claim-relative.
+    - name: retrieved_content
+      required: false
+      type: string
+      description: Already-fetched content, to avoid a second retrieval.
+    - name: domain_context
+      required: false
+      type: string
+      description: Subject domain, which changes what counts as an authoritative source.
+  prerequisites: []
+  tools:
+    - page-fetch
+    - web-search
+    - web-browser
+    - llm-inference
+  dependencies:
+    - Network egress to resolve the source and its origin chain
+  procedure:
+    - step: Resolve the true origin
+      description: >-
+        Follow syndication, aggregation and republication back to the originating
+        publisher. Assess the origin, not the aggregator that surfaced it.
+    - step: Classify the source
+      description: >-
+        Assign a class — primary record, first-party statement, peer-reviewed,
+        independent journalism, trade press, vendor content, user-generated,
+        unattributed — with class determining the ceiling on trust.
+    - step: Identify incentive
+      description: >-
+        Name who benefits if the claim is believed and whether the publisher is
+        that party or funded by them. Undisclosed commercial incentive caps trust.
+    - step: Test independence
+      description: >-
+        Check whether the source has its own evidence or restates another source.
+        Restatements inherit their origin's score and never add corroboration.
+    - step: Check recency against claim volatility
+      description: >-
+        Compare publication date against how fast the claim's subject changes.
+        Pricing and staffing decay in months; methodology and history do not.
+    - step: Check verifiability
+      description: >-
+        Determine whether the claim's underlying evidence is inspectable — data,
+        filings, methodology, named sources — or asserted without support.
+    - step: Score and record
+      description: >-
+        Emit a trust score with the class ceiling, the deductions applied and the
+        reasons, so a reviewer can disagree with the score on the record.
+  decision_rules:
+    - condition: The source restates another source without adding evidence
+      action: Score the origin instead and mark this source as non-corroborating.
+    - condition: The publisher sells the thing the claim endorses
+      action: Cap trust at low and label the claim vendor-sourced.
+    - condition: No author, no date and no citations are present
+      action: Reject the source for material claims regardless of apparent plausibility.
+    - condition: The claim is volatile and the source predates the recency window
+      action: Reject for current-state claims; retain as historical evidence only.
+    - condition: The source is a primary record such as a filing, contract or changelog
+      action: Assign high trust for facts it directly records, but not for interpretation it offers.
+  outputs:
+    - name: credibility_verdict
+      type: enum
+      description: One of high, medium, low or reject, relative to the specific claim.
+    - name: score_rationale
+      type: object
+      description: Class ceiling, each deduction applied, and the reason for each.
+    - name: origin_chain
+      type: string[]
+      description: Ordered URLs from the retrieved source back to the originating publisher.
+    - name: corroboration_flag
+      type: boolean
+      description: Whether this source may count as independent corroboration for the claim.
+  validation:
+    - check: The origin chain terminates at a publisher that holds its own evidence, or the source is marked unattributed.
+    - check: The verdict is stated relative to the specific claim, not to the publication in general.
+    - check: Every deduction in the rationale names an observable property of the source.
+    - check: Sources marked non-corroborating are excluded from triangulation counts downstream.
+  failure_modes:
+    - failure: Search rank is treated as authority.
+      mitigation: Score before use, never after; retrieval order is never an input to the score.
+    - failure: A well-designed vendor page is scored as independent journalism.
+      mitigation: Classify by publisher identity and incentive, not by presentation quality.
+    - failure: Circular corroboration from three restatements of one origin.
+      mitigation: Resolve the origin chain first; deduplicate by origin before counting.
+    - failure: An authoritative institution is trusted on a claim outside its remit.
+      mitigation: Score claim-relative; authority is domain-bounded.
+    - failure: Recency is applied uniformly and durable facts are discarded.
+      mitigation: Set the window from claim volatility, not from a global default.
+  escalation:
+    - condition: The only available sources for a material claim all score low.
+      action: Report the claim as unestablished and escalate the sourcing gap rather than lowering the bar.
+    - condition: A source appears deliberately fabricated or manipulated.
+      action: Stop using the source, preserve the evidence and notify the requester.
+  examples:
+    - title: Scoring a vendor benchmark blog post
+      input:
+        source_url: https://example-vendor.com/blog/fastest-inference-benchmark
+        claim: Vendor X has the lowest inference latency in its category
+      output:
+        credibility_verdict: low
+        corroboration_flag: false
+        score_rationale: {class: vendor-content, deductions: [undisclosed benchmark configuration, publisher sells the product]}
+    - title: Scoring a regulatory filing for a revenue claim
+      input:
+        source_url: https://filings.example.gov/2025/q2/acme-10q.pdf
+        claim: Acme's subscription revenue grew 31 percent year over year
+      output:
+        credibility_verdict: high
+        corroboration_flag: true
+        origin_chain: [https://filings.example.gov/2025/q2/acme-10q.pdf]
+  related_skills:
+    prerequisites: []
+    complementary: [evidence-synthesis, knowledge-graph-construction]
+    successors: [competitive-intelligence-report, technical-due-diligence, market-landscape-mapping]
+    related: [memory-hygiene, prompt-injection-defense]
+  complexity: intermediate
+  build_speed: 3
+  shareability: 3
+  maturity: production
+  tags: [sourcing, provenance, verification, trust, epistemics]
+  author: Agent Skills Compendium
+  license: CC-BY-4.0
+  risk_level: low
+  required_permissions: [web.read]
+  restricted_actions: [Bypassing paywalls, Circumventing access controls to inspect a source]
+  created_at: "2025-01-14T00:00:00Z"
+  updated_at: "2025-07-30T00:00:00Z"

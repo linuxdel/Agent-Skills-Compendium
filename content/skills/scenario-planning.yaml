@@ -1,0 +1,147 @@
+skill:
+  id: skl-scenario-planning
+  name: Scenario Planning
+  slug: scenario-planning
+  version: 1.0.0
+  category: business-strategy
+  layer: L1
+  domain: null
+  description: Build a small set of internally consistent futures and identify the decisions that hold up across all of them.
+  purpose: >-
+    Forecasting a single future produces plans that fail on the first surprise.
+    Scenario planning instead identifies the uncertainties that actually matter,
+    constructs distinct futures around them, and separates robust decisions from
+    bets — so an organisation knows which of its choices are contingent.
+  trigger: >-
+    A consequential decision must be made under uncertainty that cannot be
+    resolved by more analysis.
+  inputs:
+    - name: decision
+      required: true
+      type: string
+      description: The decision the scenarios must inform. Scenarios without a decision are entertainment.
+    - name: horizon
+      required: true
+      type: string
+      description: The time frame, which determines which uncertainties are relevant.
+    - name: known_uncertainties
+      required: false
+      type: string[]
+      description: Uncertainties already identified by the organisation.
+    - name: fixed_constraints
+      required: false
+      type: string[]
+      description: Things that will not change over the horizon, which bound every scenario.
+  prerequisites: []
+  tools:
+    - llm-inference
+    - web-search
+    - spreadsheet
+    - document-generator
+  dependencies: []
+  procedure:
+    - step: Anchor on the decision
+      description: >-
+        State the decision and what would make each option right. Scenarios are
+        built to discriminate between options, not to describe the world.
+    - step: Separate predetermined from uncertain
+      description: >-
+        Distinguish trends already in motion from genuine uncertainties. Most
+        listed uncertainties are actually predetermined and belong in every scenario.
+    - step: Rank uncertainties by impact and irreducibility
+      description: >-
+        Keep the two or three uncertainties that both matter most and cannot be
+        resolved by further research.
+    - step: Construct distinct scenarios
+      description: >-
+        Build three or four internally consistent futures across the critical
+        uncertainties, each with a causal narrative rather than a label.
+    - step: Test the decision in each scenario
+      description: >-
+        Evaluate every option under every scenario and record where it wins,
+        survives or fails.
+    - step: Separate robust moves from bets
+      description: >-
+        Identify decisions that hold across all scenarios and those that depend on
+        one being true. Bets require explicit acceptance.
+    - step: Define early indicators
+      description: >-
+        Name observable signals that would reveal which scenario is unfolding,
+        early enough to act on.
+  decision_rules:
+    - condition: A proposed uncertainty can be resolved by research
+      action: Resolve it instead; scenarios are for irreducible uncertainty only.
+    - condition: Scenarios differ only in degree
+      action: Rebuild them; scenarios that differ only in magnitude do not test decisions.
+    - condition: One option wins in every scenario
+      action: Make it a robust move and stop deliberating; spend the analysis elsewhere.
+    - condition: The preferred option fails badly in one scenario
+      action: Report the failure mode and quantify the downside before proceeding.
+    - condition: More than four scenarios emerge
+      action: Collapse them; teams cannot hold more than four futures in mind.
+  outputs:
+    - name: scenarios
+      type: json
+      description: Each scenario with its driving uncertainties, causal narrative and implications.
+    - name: decision_matrix
+      type: json
+      description: Each option scored under each scenario.
+    - name: robust_moves
+      type: string[]
+      description: Decisions that hold across all scenarios.
+    - name: early_indicators
+      type: json
+      description: Observable signals mapped to the scenario each would confirm.
+  validation:
+    - check: Every scenario is internally consistent and causally explained, not just labelled.
+    - check: Scenarios differ in kind rather than only in degree.
+    - check: Every option is evaluated in every scenario.
+    - check: Early indicators are observable and time-bound.
+  failure_modes:
+    - failure: Scenarios are optimistic, base and pessimistic versions of one future.
+      mitigation: Build across distinct uncertainty axes, not along a single magnitude dimension.
+    - failure: Predetermined trends are treated as uncertainties and dilute the analysis.
+      mitigation: Run the predetermined-versus-uncertain separation explicitly.
+    - failure: Scenarios are produced and the decision is made on intuition anyway.
+      mitigation: Require the decision matrix; scenarios exist to discriminate options.
+    - failure: Early indicators are lagging and arrive too late to act on.
+      mitigation: Require indicators to be observable before the outcome is locked in.
+  escalation:
+    - condition: A scenario implies existential risk to the organisation.
+      action: Escalate immediately rather than presenting it as one option among four.
+    - condition: Robust moves conflict with commitments already made.
+      action: Escalate the conflict to the accountable decision-maker.
+  examples:
+    - title: Planning capacity under uncertain regulation
+      input:
+        decision: Whether to commit to a three-year data centre lease
+        horizon: 3 years
+      output:
+        critical_uncertainties: [Data residency rules, Demand growth rate]
+        robust_moves: [Contract for burst capacity in-region regardless of scenario]
+        early_indicators: [Draft rule publication, Enterprise RFP language shift]
+    - title: Planning a product bet against platform risk
+      input:
+        decision: Whether to build the integration on a single platform's API
+        horizon: 2 years
+      output:
+        scenarios: 3
+        bets: [Single-platform build wins only if the platform keeps its API open]
+        early_indicators: [Rate limit policy changes, Partner tier restructuring]
+  related_skills:
+    prerequisites: []
+    complementary: [validate-analysis-assumptions, market-landscape-mapping]
+    successors: [risk-weighted-recommendation, build-buy-partner-decision]
+    related: [situation-assessment, capacity-forecasting]
+  complexity: expert
+  build_speed: 1
+  shareability: 3
+  maturity: beta
+  tags: [strategy, uncertainty, scenarios, planning, robustness]
+  author: Agent Skills Compendium
+  license: CC-BY-4.0
+  risk_level: medium
+  required_permissions: [document.write]
+  restricted_actions: [Presenting a single forecast as a scenario set]
+  created_at: "2025-02-22T00:00:00Z"
+  updated_at: "2025-08-01T00:00:00Z"

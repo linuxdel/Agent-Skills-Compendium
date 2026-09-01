@@ -1,0 +1,142 @@
+skill:
+  id: skl-failure-taxonomy
+  name: Failure Taxonomy
+  slug: failure-taxonomy
+  version: 1.0.0
+  category: agent-evaluation
+  layer: L5
+  domain: null
+  description: Classify an agent's failures by mechanism so that remediation targets causes rather than symptoms.
+  purpose: >-
+    Aggregate failure rates say a system is wrong 12 percent of the time and
+    nothing about why. This skill sorts failures by the mechanism that produced
+    them — misunderstanding, retrieval, reasoning, tool use, verification,
+    scope — so that effort goes to the mechanism responsible for the most failures.
+  trigger: >-
+    An agent fails often enough to matter and the failures have not been
+    systematically classified.
+  inputs:
+    - name: failure_cases
+      required: true
+      type: string
+      description: Observed failures with their full traces, not just their outputs.
+    - name: system_architecture
+      required: true
+      type: string
+      description: The agent's components, so failures can be attributed to a stage.
+    - name: expected_behaviour
+      required: true
+      type: string
+      description: What should have happened in each case.
+  prerequisites:
+    - eval-set-design
+  tools:
+    - eval-harness
+    - dataframe-runtime
+    - llm-inference
+    - observability
+  dependencies:
+    - Traces that include intermediate reasoning and tool calls, not only final outputs
+  procedure:
+    - step: Locate the first divergence
+      description: >-
+        For each failure, find the earliest point where behaviour diverged from
+        correct. Later errors are usually consequences of it.
+    - step: Attribute to a mechanism
+      description: >-
+        Classify by mechanism — instruction misunderstanding, retrieval miss,
+        reasoning error, tool misuse, verification absence, scope drift,
+        hallucinated fact, or correct-but-unhelpful.
+    - step: Distinguish capability from configuration
+      description: >-
+        Determine whether the system could not do it or was not set up to do it.
+        These require entirely different fixes.
+    - step: Cluster and count
+      description: >-
+        Group by mechanism and count, so remediation can be prioritised by
+        frequency and severity rather than by recency.
+    - step: Check for cascades
+      description: >-
+        Identify failures where one early error produced many downstream ones, so
+        the count is not inflated by consequences.
+    - step: Identify detection gaps
+      description: >-
+        Determine which failures the system did not notice, since undetected
+        failure is worse than detected failure.
+    - step: Map mechanisms to interventions
+      description: >-
+        For each mechanism, state the intervention class that addresses it and
+        what would confirm the fix worked.
+  decision_rules:
+    - condition: A failure has multiple errors
+      action: Classify by the first divergence; downstream errors are consequences.
+    - condition: The system produced a plausible but unsupported claim
+      action: Classify as hallucination and check whether verification was absent or ineffective.
+    - condition: The output was correct but did not serve the request
+      action: Classify as correct-but-unhelpful; this is an instruction or framing failure, not a capability one.
+    - condition: A mechanism accounts for a large share of failures
+      action: Prioritise it regardless of individual severity.
+    - condition: The system did not detect its own failure
+      action: Raise the detection gap as a separate finding from the failure itself.
+  outputs:
+    - name: failure_taxonomy
+      type: json
+      description: Mechanisms with counts, severity and representative cases.
+    - name: cascade_analysis
+      type: json
+      description: Failures traced to a shared root, with the inflation removed from counts.
+    - name: detection_gaps
+      type: json
+      description: Failures the system did not notice, with why.
+    - name: intervention_map
+      type: json
+      description: Mechanism to intervention class, with the confirming measurement.
+  validation:
+    - check: Every failure is attributed to its first divergence, not its final symptom.
+    - check: Capability and configuration failures are distinguished.
+    - check: Cascades are identified so counts are not inflated.
+    - check: Every mechanism maps to an intervention with a confirming measurement.
+  failure_modes:
+    - failure: Failures are counted by symptom and the fix targets the wrong stage.
+      mitigation: Attribute to the first divergence in the trace.
+    - failure: One root cause appears as many failures and dominates priorities incorrectly.
+      mitigation: Run cascade analysis before counting.
+    - failure: Configuration problems are treated as model limitations and fixed expensively.
+      mitigation: Distinguish capability from configuration explicitly.
+    - failure: Undetected failures are absent from the taxonomy entirely.
+      mitigation: Sample outputs independently rather than relying on system-flagged failures.
+  escalation:
+    - condition: A failure mechanism produces harmful or unsafe outputs.
+      action: Escalate immediately and restrict autonomy before continuing analysis.
+    - condition: Failures concentrate in a user segment or content class.
+      action: Escalate as a fairness or coverage concern, not only as a quality issue.
+  examples:
+    - title: Classifying failures in a research agent
+      input:
+        failure_cases: 84 failures over two weeks
+      output:
+        failure_taxonomy: {retrieval_miss: 31, hallucination: 18, scope_drift: 14, tool_misuse: 12, other: 9}
+        detection_gaps: 22 failures the system reported as successes
+    - title: Classifying failures in a code agent
+      input:
+        system_architecture: Orient, implement, verify pipeline
+      output:
+        cascade_analysis: 40 percent of failures trace to one orientation error class
+        intervention_map: [Orientation failures addressed by requiring a traced execution path]
+  related_skills:
+    prerequisites: [eval-set-design]
+    complementary: [llm-judge-calibration, agent-telemetry-instrumentation]
+    successors: [agent-red-teaming, autonomy-staging]
+    related: [debug-root-cause-analysis, multi-agent-conflict-resolution]
+  complexity: advanced
+  build_speed: 2
+  shareability: 3
+  maturity: beta
+  tags: [evaluation, failures, taxonomy, diagnosis, agents]
+  author: Agent Skills Compendium
+  license: CC-BY-4.0
+  risk_level: medium
+  required_permissions: [eval.read, logs.read]
+  restricted_actions: [Reporting failure rates without the detection gap]
+  created_at: "2025-04-13T00:00:00Z"
+  updated_at: "2025-08-18T00:00:00Z"

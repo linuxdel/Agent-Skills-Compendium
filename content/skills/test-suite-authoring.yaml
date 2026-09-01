@@ -1,0 +1,151 @@
+skill:
+  id: skl-test-suite-authoring
+  name: Test Suite Authoring
+  slug: test-suite-authoring
+  version: 1.1.0
+  category: coding-engineering
+  layer: L3
+  domain: software-engineering
+  description: Write tests that fail for the right reasons — driven by behaviour and failure modes rather than by coverage targets.
+  purpose: >-
+    Coverage measures which lines ran, not which defects would be caught. This
+    skill derives cases from the specification's behaviour and the code's failure
+    modes, verifies each test can actually fail, and keeps the suite fast enough
+    that it is run.
+  trigger: >-
+    New behaviour is being implemented, an escaped defect needs a regression
+    test, or an existing suite is not catching defects.
+  inputs:
+    - name: subject
+      required: true
+      type: string
+      description: The unit, module or system under test.
+    - name: behaviour_spec
+      required: true
+      type: string
+      description: What the subject should do, including failure behaviour.
+    - name: existing_tests
+      required: false
+      type: string
+      description: The current suite, to avoid duplication and to reuse fixtures.
+    - name: test_level
+      required: false
+      type: string
+      description: Unit, integration or end to end, defaulting to the lowest level that can observe the behaviour.
+  prerequisites:
+    - codebase-orientation
+  tools:
+    - code-editor
+    - code-search
+    - test-runner
+    - file-system
+    - llm-inference
+  dependencies:
+    - A working test runner and the project's existing test conventions
+  procedure:
+    - step: Enumerate behaviours, not functions
+      description: >-
+        List the observable behaviours the subject must exhibit, including
+        failure behaviours. Tests map to behaviours, not to code structure.
+    - step: Choose the lowest observing level
+      description: >-
+        Test at the lowest level that can actually observe the behaviour;
+        higher levels are slower and diagnose worse.
+    - step: Derive boundary and failure cases
+      description: >-
+        Add empty, single, maximum, malformed, duplicate, concurrent and
+        timeout cases derived from the code's real failure modes.
+    - step: Write tests that assert behaviour
+      description: >-
+        Assert on observable outcomes rather than on internal calls, so the tests
+        survive refactoring.
+    - step: Verify each test can fail
+      description: >-
+        Break the implementation deliberately and confirm the test fails. A test
+        never observed failing proves nothing.
+    - step: Isolate and stabilise
+      description: >-
+        Remove dependence on time, ordering, network and shared state, which are
+        the sources of almost all flakiness.
+    - step: Keep the suite fast
+      description: >-
+        Budget runtime deliberately; a suite people skip provides no protection.
+    - step: Name tests by the behaviour they protect
+      description: >-
+        Name each test so that a failure message tells a future engineer what
+        broke without opening the file.
+  decision_rules:
+    - condition: A test passes against a deliberately broken implementation
+      action: Rewrite it; it asserts nothing meaningful.
+    - condition: A behaviour can only be observed end to end
+      action: Test it there, but keep the count small and the assertions specific.
+    - condition: A test depends on wall-clock time or network
+      action: Inject the dependency; do not add sleeps or retries to stabilise it.
+    - condition: Coverage is high but escaped defects continue
+      action: Derive cases from the escaped defects rather than raising the coverage target.
+    - condition: Mocking would replace the logic under test
+      action: Use a real implementation or a contract test instead.
+  outputs:
+    - name: test_code
+      type: diff
+      description: The added or modified tests.
+    - name: behaviour_matrix
+      type: json
+      description: Behaviours and cases covered, with gaps stated explicitly.
+    - name: failure_verification
+      type: string
+      description: Evidence each new test fails against a broken implementation.
+    - name: runtime_report
+      type: object
+      description: Suite runtime before and after.
+  validation:
+    - check: Every new test has been observed failing against a broken implementation.
+    - check: Tests assert observable behaviour rather than internal call sequences.
+    - check: No test depends on wall-clock time, ordering or network availability.
+    - check: The behaviour matrix names the gaps that remain uncovered.
+  failure_modes:
+    - failure: Tests mirror the implementation and pass regardless of correctness.
+      mitigation: Verify failure against a broken implementation before accepting a test.
+    - failure: Heavy mocking leaves the real logic untested.
+      mitigation: Prefer real implementations; use contract tests at boundaries.
+    - failure: Flaky tests train the team to ignore failures.
+      mitigation: Remove time, ordering and network dependence as a required step.
+    - failure: Coverage targets drive tests for trivial code while failure paths stay untested.
+      mitigation: Derive cases from behaviours and failure modes, never from coverage gaps.
+  escalation:
+    - condition: The subject cannot be tested without a production dependency.
+      action: Escalate the testability problem rather than writing a test against production.
+    - condition: Behaviour required by the spec cannot be observed at any level.
+      action: Escalate to the specification owner; unobservable behaviour is unspecifiable.
+  examples:
+    - title: Regression test for an escaped rounding defect
+      input:
+        subject: Invoice total calculation
+        behaviour_spec: Totals must round half away from zero at two decimals
+      output:
+        cases_added: 7
+        failure_verification: All 7 fail on the pre-fix commit
+    - title: Tests for a retrying HTTP client
+      input:
+        subject: Partner API client
+        behaviour_spec: Retry on 5xx and timeout, never on 4xx, cap at three attempts
+      output:
+        cases_added: 9
+        behaviour_matrix: {gaps: [Behaviour under connection reset mid-body]}
+  related_skills:
+    prerequisites: [codebase-orientation]
+    complementary: [feature-implementation, code-review, debug-root-cause-analysis]
+    successors: [release-readiness-check]
+    related: [eval-set-design, technical-specification]
+  complexity: intermediate
+  build_speed: 2
+  shareability: 3
+  maturity: production
+  tags: [testing, quality, regression, engineering, coverage]
+  author: Agent Skills Compendium
+  license: CC-BY-4.0
+  risk_level: low
+  required_permissions: [repo.write, shell.execute]
+  restricted_actions: [Writing tests that execute against production systems]
+  created_at: "2025-01-13T00:00:00Z"
+  updated_at: "2025-08-12T00:00:00Z"

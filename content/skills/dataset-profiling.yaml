@@ -1,0 +1,147 @@
+skill:
+  id: skl-dataset-profiling
+  name: Dataset Profiling
+  slug: dataset-profiling
+  version: 1.2.0
+  category: data-analysis
+  layer: L3
+  domain: null
+  description: Establish what a dataset actually contains — shape, quality, coverage and traps — before any analysis is run against it.
+  purpose: >-
+    Most wrong analyses are wrong because of the data, not the method. This
+    skill front-loads the discovery of nulls, duplicates, silent type coercions,
+    truncated history, timezone drift and definitional changes, and reports what
+    the dataset can and cannot support.
+  trigger: >-
+    Before the first analytical query against an unfamiliar dataset, or when a
+    familiar dataset produces an implausible result.
+  inputs:
+    - name: dataset_ref
+      required: true
+      type: string
+      description: Table, file or query identifying the data.
+    - name: intended_analysis
+      required: true
+      type: string
+      description: What the data will be used for, which determines which quality issues are disqualifying.
+    - name: grain_hypothesis
+      required: false
+      type: string
+      description: What one row is believed to represent. The profile confirms or refutes it.
+    - name: time_column
+      required: false
+      type: string
+      description: The column used for time-based work, checked for gaps, timezone and lateness.
+  prerequisites: []
+  tools:
+    - sql-client
+    - dataframe-runtime
+    - chart-renderer
+    - llm-inference
+  dependencies:
+    - Read access to the dataset and to its schema metadata
+  procedure:
+    - step: Confirm the grain
+      description: >-
+        Test what one row represents by checking uniqueness of the candidate key.
+        A wrong grain assumption invalidates every aggregate downstream.
+    - step: Profile completeness
+      description: >-
+        Measure null rates per column, and distinguish structural nulls from
+        missing data. Report nulls concentrated in time or segment separately.
+    - step: Profile distributions and types
+      description: >-
+        Check ranges, cardinality, outliers and whether declared types match
+        actual content, including numerics stored as strings.
+    - step: Detect duplicates
+      description: >-
+        Test for exact and near duplicates on business keys, since near
+        duplicates survive most naive deduplication.
+    - step: Check temporal coverage
+      description: >-
+        Look for gaps, truncation at the start of history, timezone
+        inconsistency, and rows arriving late relative to their event time.
+    - step: Detect definitional breaks
+      description: >-
+        Look for step changes in distributions that indicate an upstream
+        instrumentation or definition change rather than a real-world shift.
+    - step: State fitness for the intended analysis
+      description: >-
+        Conclude with what this dataset can support, what it cannot, and which
+        issues must be resolved before proceeding.
+  decision_rules:
+    - condition: The candidate key is not unique
+      action: Stop and establish the true grain before any aggregate is computed.
+    - condition: Nulls are concentrated in a segment or period rather than uniform
+      action: Treat as systematic missingness and exclude naive imputation.
+    - condition: A step change appears in a distribution
+      action: Investigate as an instrumentation change before interpreting it as a business event.
+    - condition: History is truncated relative to the analysis window
+      action: Narrow the analysis window rather than extrapolating backwards.
+    - condition: Event and ingestion timestamps diverge materially
+      action: Define which timestamp the analysis uses and report lateness explicitly.
+  outputs:
+    - name: profile_report
+      type: document
+      description: Grain, completeness, distributions, duplicates, temporal coverage and breaks.
+    - name: quality_issues
+      type: json
+      description: Issues with severity, affected columns or rows, and impact on the intended analysis.
+    - name: fitness_verdict
+      type: enum
+      description: Fit, fit with caveats, or unfit for the intended analysis.
+    - name: profile_metrics
+      type: json
+      description: Machine-readable per-column statistics for regression against future profiles.
+  validation:
+    - check: The grain is confirmed by a uniqueness test, not assumed.
+    - check: Every column has a null rate and a type verdict.
+    - check: The fitness verdict names the specific analysis it applies to.
+    - check: Temporal coverage is checked whenever a time column exists.
+  failure_modes:
+    - failure: Aggregates are computed over a fan-out join and silently double count.
+      mitigation: Confirm grain first; treat non-unique keys as a hard stop.
+    - failure: An instrumentation change is reported as a business trend.
+      mitigation: Run break detection before interpretation.
+    - failure: Timezone mixing shifts daily aggregates by a day.
+      mitigation: Assert a single timezone and test boundary rows explicitly.
+    - failure: Clean-looking data hides truncated history.
+      mitigation: Always check the earliest and latest rows against the expected window.
+  escalation:
+    - condition: The dataset contains personal or regulated data not expected in scope.
+      action: Stop profiling, restrict access and notify the data owner.
+    - condition: The dataset is unfit and no alternative source exists.
+      action: Escalate to the requester rather than proceeding with caveats.
+  examples:
+    - title: Profiling an events table before a funnel analysis
+      input:
+        dataset_ref: analytics.product_events
+        intended_analysis: Signup-to-activation funnel by week
+        grain_hypothesis: One row per event
+      output:
+        fitness_verdict: fit with caveats
+        quality_issues: [12 percent of events lack session_id before March, Late arrivals up to 36 hours]
+    - title: Profiling a finance export before reconciliation
+      input:
+        dataset_ref: exports/gl_2025_q2.csv
+        intended_analysis: Ledger reconciliation
+      output:
+        fitness_verdict: unfit
+        quality_issues: [Amounts stored as strings with mixed separators, Duplicate journal ids]
+  related_skills:
+    prerequisites: []
+    complementary: [metric-definition, validate-analysis-assumptions]
+    successors: [cohort-analysis, metric-anomaly-diagnosis, statistical-significance-test]
+    related: [account-reconciliation, visualization-design]
+  complexity: intermediate
+  build_speed: 3
+  shareability: 3
+  maturity: production
+  tags: [data, quality, profiling, grain, preflight]
+  author: Agent Skills Compendium
+  license: CC-BY-4.0
+  risk_level: low
+  required_permissions: [data.read]
+  restricted_actions: [Writing to the profiled dataset, Exporting rows containing personal data]
+  created_at: "2025-01-11T00:00:00Z"
+  updated_at: "2025-08-25T00:00:00Z"

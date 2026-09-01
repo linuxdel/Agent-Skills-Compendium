@@ -1,0 +1,141 @@
+skill:
+  id: skl-architecture-decision-record
+  name: Architecture Decision Record
+  slug: architecture-decision-record
+  version: 1.0.0
+  category: coding-engineering
+  layer: L1
+  domain: software-engineering
+  description: Capture a consequential technical decision with its context, options, trade-offs and reversal conditions, so it can be understood and revisited later.
+  purpose: >-
+    Architectural decisions are re-argued for years because the reasoning was
+    never written down, and reversed for the wrong reasons because their original
+    constraints were forgotten. This skill records the decision, the alternatives
+    actually considered, and the conditions under which it should be revisited.
+  trigger: >-
+    A decision is being made that is expensive to reverse, affects more than one
+    team, or will be questioned by people who were not in the room.
+  inputs:
+    - name: decision
+      required: true
+      type: string
+      description: The choice being made, stated as a selection among options.
+    - name: context
+      required: true
+      type: string
+      description: The forces in play — constraints, requirements, existing commitments, timelines.
+    - name: options_considered
+      required: true
+      type: string[]
+      description: The genuine alternatives, including the do-nothing option.
+    - name: decision_owner
+      required: true
+      type: string
+      description: Who is accountable for the decision and for revisiting it.
+  prerequisites: []
+  tools:
+    - file-system
+    - version-control
+    - document-generator
+    - llm-inference
+  dependencies:
+    - A durable location where records are stored and versioned alongside the code
+  procedure:
+    - step: State the decision in one sentence
+      description: >-
+        Write the decision so a reader knows immediately what was chosen, without
+        reading the context first.
+    - step: Record the forces
+      description: >-
+        Capture the constraints that made this a decision rather than an obvious
+        choice, including non-technical ones.
+    - step: Document real alternatives
+      description: >-
+        Record only options that were genuinely viable, with the reason each was
+        not chosen. Straw options make the record useless later.
+    - step: State the consequences
+      description: >-
+        Record what this decision makes easy, what it makes hard, and what it
+        forecloses. Consequences outlive rationale.
+    - step: Define reversal conditions
+      description: >-
+        State what would have to change for this decision to be wrong, and how
+        expensive reversal would be at that point.
+    - step: Assign status and owner
+      description: >-
+        Mark the record proposed, accepted, superseded or deprecated, and name the
+        accountable owner.
+    - step: Link the decision graph
+      description: >-
+        Link to the records this supersedes or depends on, so the reasoning
+        history is navigable.
+  decision_rules:
+    - condition: Only one option was considered
+      action: Return to the decision rather than recording it; a single-option decision is an assumption.
+    - condition: The decision is easily reversible
+      action: Record it briefly or not at all; records are for decisions with weight.
+    - condition: The decision supersedes an earlier record
+      action: Mark the earlier record superseded and link both directions.
+    - condition: The rationale depends on a temporary constraint
+      action: Record the constraint's expected lifetime as an explicit reversal condition.
+  outputs:
+    - name: decision_record
+      type: document
+      description: Title, status, context, options, decision, consequences, reversal conditions.
+    - name: decision_graph_links
+      type: json
+      description: Supersedes, superseded-by and depends-on relationships.
+    - name: revisit_trigger
+      type: string
+      description: The observable condition that should prompt reconsideration.
+  validation:
+    - check: At least two genuine alternatives are documented with reasons for rejection.
+    - check: Consequences include what the decision makes harder, not only what it enables.
+    - check: A reversal condition is stated and is observable.
+    - check: Status and owner are set.
+  failure_modes:
+    - failure: The record justifies a decision already made rather than documenting the reasoning.
+      mitigation: Require genuine alternatives with substantive rejection reasons.
+    - failure: Only benefits are recorded and the costs resurface as surprises.
+      mitigation: Require negative consequences explicitly.
+    - failure: Records accumulate and nobody knows which are current.
+      mitigation: Enforce status and supersession links.
+    - failure: The decision is reversed years later without knowing the original constraint.
+      mitigation: Record reversal conditions and constraint lifetimes.
+  escalation:
+    - condition: The decision crosses organisational boundaries without an agreed owner.
+      action: Escalate ownership before recording the decision as accepted.
+    - condition: The decision has regulatory or contractual consequences.
+      action: Route for legal review before status is set to accepted.
+  examples:
+    - title: Choosing a message delivery guarantee
+      input:
+        decision: Adopt at-least-once delivery with idempotent consumers
+        options_considered: [At-most-once, Exactly-once via transactional outbox, At-least-once with idempotency]
+      output:
+        consequences: [Every consumer must be idempotent; adds design cost to all new consumers]
+        revisit_trigger: If the broker adds first-class exactly-once at acceptable latency
+    - title: Choosing a monorepo structure
+      input:
+        decision: Single repository with per-package ownership
+        options_considered: [Polyrepo, Monorepo, Hybrid with shared libraries extracted]
+      output:
+        consequences: [Cross-cutting changes get easier; CI cost grows superlinearly with package count]
+        revisit_trigger: If CI wall-clock exceeds 20 minutes at median
+  related_skills:
+    prerequisites: []
+    complementary: [technical-specification, structured-critique]
+    successors: [feature-implementation, infrastructure-change-review]
+    related: [build-buy-partner-decision, risk-weighted-recommendation]
+  complexity: intermediate
+  build_speed: 3
+  shareability: 3
+  maturity: production
+  tags: [architecture, decisions, documentation, governance, engineering]
+  author: Agent Skills Compendium
+  license: CC-BY-4.0
+  risk_level: low
+  required_permissions: [repo.write, document.write]
+  restricted_actions: [Marking a record accepted without a named owner]
+  created_at: "2025-02-24T00:00:00Z"
+  updated_at: "2025-07-15T00:00:00Z"

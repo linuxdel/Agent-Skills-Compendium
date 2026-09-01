@@ -1,0 +1,147 @@
+skill:
+  id: skl-taxonomy-design
+  name: Taxonomy Design
+  slug: taxonomy-design
+  version: 1.0.0
+  category: knowledge-management
+  layer: L2
+  domain: null
+  description: Design a classification scheme that people can apply consistently and that survives the arrival of things it did not anticipate.
+  purpose: >-
+    Most taxonomies are built from what exists today and break on the first item
+    that does not fit, or are so abstract that two people classify the same item
+    differently. This skill derives categories from how the classification will
+    be used, tests inter-rater agreement, and designs the extension path before
+    the taxonomy ships.
+  trigger: >-
+    A collection must be organised for retrieval, routing, reporting or access
+    control, and ad hoc labelling is producing inconsistency.
+  inputs:
+    - name: collection
+      required: true
+      type: string
+      description: What is being classified, including a representative sample.
+    - name: use_cases
+      required: true
+      type: string[]
+      description: What the classification enables — retrieval, routing, permissions, reporting.
+    - name: classifiers
+      required: true
+      type: string
+      description: Who applies the labels — people, agents or automated systems — which sets the achievable precision.
+    - name: existing_labels
+      required: false
+      type: string[]
+      description: Labels already in use, whose migration must be planned.
+  prerequisites: []
+  tools:
+    - llm-inference
+    - embedding-index
+    - dataframe-runtime
+    - knowledge-graph
+    - document-generator
+  dependencies:
+    - A representative sample of the collection, including its awkward items
+  procedure:
+    - step: Derive facets from use cases
+      description: >-
+        Determine what distinctions each use case requires. Categories that serve
+        no use case add classification cost without benefit.
+    - step: Sample the awkward items
+      description: >-
+        Draw a sample deliberately weighted toward edge cases; taxonomies built
+        on typical items fail on the rest.
+    - step: Choose facets over a single hierarchy
+      description: >-
+        Prefer several independent facets to one deep tree, since most collections
+        vary along more than one dimension.
+    - step: Define each category by criteria
+      description: >-
+        Write inclusion and exclusion criteria per category, with examples and
+        counter-examples, rather than a name and a hope.
+    - step: Test inter-rater agreement
+      description: >-
+        Have two independent classifiers label the same sample and measure
+        agreement. Below the threshold, the criteria are the problem.
+    - step: Design the residual category
+      description: >-
+        Provide an explicit place for items that do not fit and a review process
+        that turns residual growth into taxonomy change.
+    - step: Plan migration and governance
+      description: >-
+        Define how existing labels map, who owns the taxonomy, and how a category
+        is added or retired.
+  decision_rules:
+    - condition: Inter-rater agreement is below the threshold
+      action: Rewrite the criteria; do not train classifiers to compensate for an ambiguous scheme.
+    - condition: The residual category grows beyond a small share
+      action: Treat it as a signal that a facet or category is missing.
+    - condition: A hierarchy exceeds three levels
+      action: Convert to facets; deep hierarchies are applied inconsistently.
+    - condition: Two categories are frequently confused
+      action: Merge them or sharpen the boundary with explicit counter-examples.
+    - condition: A category serves no use case
+      action: Remove it.
+  outputs:
+    - name: taxonomy
+      type: document
+      description: Facets, categories, inclusion and exclusion criteria, examples and counter-examples.
+    - name: agreement_report
+      type: object
+      description: Inter-rater agreement per category with the confusions observed.
+    - name: migration_map
+      type: json
+      description: Existing labels mapped to new categories, with unmappable items listed.
+    - name: governance_rules
+      type: document
+      description: Ownership, addition and retirement process, and review cadence.
+  validation:
+    - check: Every category has inclusion criteria, exclusion criteria and counter-examples.
+    - check: Inter-rater agreement was measured on a sample including edge cases.
+    - check: Every category serves at least one stated use case.
+    - check: A residual category and its review process exist.
+  failure_modes:
+    - failure: The taxonomy fits today's collection and breaks within a quarter.
+      mitigation: Sample edge cases deliberately and design the extension path up front.
+    - failure: Two people classify the same item differently and reporting becomes unreliable.
+      mitigation: Measure agreement before rollout and fix criteria rather than training around them.
+    - failure: A deep hierarchy forces items into a single parent that does not fit.
+      mitigation: Use independent facets instead of one tree.
+    - failure: The residual bucket absorbs a third of the collection and hides the real structure.
+      mitigation: Monitor residual share and treat growth as a taxonomy defect.
+  escalation:
+    - condition: The taxonomy will drive access control or regulatory reporting.
+      action: Escalate for security or compliance review before adoption.
+    - condition: Stakeholders require incompatible category definitions.
+      action: Escalate the conflict rather than shipping ambiguous criteria.
+  examples:
+    - title: Taxonomy for a support ticket routing system
+      input:
+        use_cases: [Route to the right team, Report on defect classes]
+        classifiers: Support agents and an automated classifier
+      output:
+        facets: [Product area, Failure class, Customer impact]
+        agreement_report: {kappa: 0.79, weakest: Failure class boundary between defect and misuse}
+    - title: Taxonomy for an internal document store
+      input:
+        use_cases: [Retrieval, Retention policy, Access control]
+      output:
+        facets: [Function, Sensitivity, Lifecycle stage]
+        governance_rules: Quarterly review; residual over 5 percent triggers redesign
+  related_skills:
+    prerequisites: []
+    complementary: [knowledge-graph-construction, metric-definition]
+    successors: [knowledge-graph-construction, memory-hygiene]
+    related: [process-capture, document-restructuring]
+  complexity: advanced
+  build_speed: 2
+  shareability: 2
+  maturity: beta
+  tags: [taxonomy, classification, knowledge, governance, retrieval]
+  author: Agent Skills Compendium
+  license: CC-BY-4.0
+  risk_level: low
+  required_permissions: [document.write]
+  restricted_actions: [Deploying a taxonomy without measured agreement]
+  created_at: "2025-02-10T00:00:00Z"
+  updated_at: "2025-07-16T00:00:00Z"

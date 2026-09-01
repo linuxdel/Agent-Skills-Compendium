@@ -1,0 +1,151 @@
+skill:
+  id: skl-perception-grounding
+  name: Perception Grounding
+  slug: perception-grounding
+  version: 1.0.0
+  category: physical-ai-robotics
+  layer: L4
+  domain: robotics
+  description: Convert raw sensor data into a spatial world model with explicit uncertainty, so that downstream planning knows what it does not know.
+  purpose: >-
+    A physical agent that treats perception as certain will act confidently on a
+    misdetection, and in the physical world that has consequences. This skill
+    fuses sensors into a scene representation where every object carries pose
+    uncertainty, detection confidence and observation age, and where unobserved
+    space is marked unknown rather than empty.
+  trigger: >-
+    Before any physical action that depends on where things are.
+  inputs:
+    - name: sensor_streams
+      required: true
+      type: string
+      description: Camera, depth, lidar, force and proprioceptive streams with timestamps.
+    - name: task_context
+      required: true
+      type: string
+      description: What the robot is about to do, which determines the required precision and the objects that matter.
+    - name: prior_map
+      required: false
+      type: string
+      description: Known static environment, against which changes are detected.
+    - name: calibration
+      required: true
+      type: string
+      description: Sensor extrinsics and intrinsics with their validity date.
+  prerequisites: []
+  tools:
+    - sensor-stream
+    - robot-runtime
+    - llm-inference
+    - simulator
+  dependencies:
+    - Time-synchronised sensor streams and current calibration
+  procedure:
+    - step: Verify calibration and synchronisation
+      description: >-
+        Confirm extrinsics are current and streams are time-aligned. Stale
+        calibration produces confident, consistent and wrong geometry.
+    - step: Assess sensor health
+      description: >-
+        Detect occlusion, saturation, dropout and degraded conditions per sensor
+        before fusing, rather than fusing degraded data silently.
+    - step: Detect and localise objects
+      description: >-
+        Identify task-relevant objects with pose estimates and per-object
+        detection confidence.
+    - step: Fuse across modalities
+      description: >-
+        Combine modalities with their respective uncertainties, and treat
+        disagreement between modalities as a signal rather than averaging it away.
+    - step: Mark unknown space explicitly
+      description: >-
+        Distinguish observed-empty from unobserved. Treating unobserved space as
+        free is the most dangerous default in physical systems.
+    - step: Track observation age
+      description: >-
+        Attach an age to every element; a detection from two seconds ago is not a
+        current fact in a dynamic scene.
+    - step: Check against task tolerance
+      description: >-
+        Compare the achieved uncertainty against what the task requires, and
+        report insufficiency rather than proceeding.
+    - step: Emit the grounded scene
+      description: >-
+        Produce the world model with per-element uncertainty, confidence, age and
+        the unknown-space map.
+  decision_rules:
+    - condition: Calibration is outside its validity period
+      action: Halt and request recalibration; do not act on uncalibrated geometry.
+    - condition: Modalities disagree beyond their combined uncertainty
+      action: Report a perception conflict and reduce to the most conservative interpretation.
+    - condition: The task-relevant region is unobserved
+      action: Request a viewpoint change rather than assuming the space is free.
+    - condition: Achieved uncertainty exceeds the task tolerance
+      action: Report insufficient perception and do not hand the scene to planning.
+    - condition: A detection is older than the scene's dynamics allow
+      action: Treat it as expired and re-observe.
+  outputs:
+    - name: world_model
+      type: object
+      description: Objects with pose, uncertainty, confidence and observation age.
+    - name: unknown_space_map
+      type: object
+      description: Regions not observed, distinguished from observed-free space.
+    - name: sensor_health
+      type: json
+      description: Per-sensor status including occlusion, dropout and degradation.
+    - name: sufficiency_verdict
+      type: enum
+      description: Whether perception meets the task's tolerance.
+  validation:
+    - check: Every object carries pose uncertainty, confidence and observation age.
+    - check: Unobserved space is distinguished from observed-free space.
+    - check: Calibration validity was verified before fusion.
+    - check: Achieved uncertainty is compared against the task tolerance.
+  failure_modes:
+    - failure: Unobserved space is treated as free and the robot moves into an occlusion.
+      mitigation: Maintain an explicit unknown-space map and treat unknown as occupied for planning.
+    - failure: Stale calibration produces a consistent geometric offset that looks correct.
+      mitigation: Verify calibration validity and cross-check with a known reference.
+    - failure: Disagreeing modalities are averaged into a plausible wrong pose.
+      mitigation: Treat disagreement as a conflict signal, not as noise to be smoothed.
+    - failure: A stale detection is acted on in a dynamic scene.
+      mitigation: Expire detections by observation age relative to scene dynamics.
+  escalation:
+    - condition: Perception is insufficient and the task cannot be safely deferred.
+      action: Stop the robot and escalate to a human operator.
+    - condition: A sensor has failed in a way that removes redundancy.
+      action: Enter a degraded-safe mode and escalate rather than continuing on remaining sensors.
+    - condition: Humans are detected in the workspace.
+      action: Apply the human-present safety envelope and escalate per the safety policy.
+  examples:
+    - title: Grounding a bin-picking scene
+      input:
+        task_context: Grasp a specific part from a mixed bin
+        calibration: Verified 2 days ago, valid for 30 days
+      output:
+        sufficiency_verdict: sufficient
+        world_model: 14 objects, target pose uncertainty 2.1mm against a 5mm tolerance
+    - title: Grounding a mobile navigation scene
+      input:
+        task_context: Traverse a corridor with a blind corner
+      output:
+        sufficiency_verdict: insufficient
+        unknown_space_map: Region beyond the corner unobserved; viewpoint change requested
+  related_skills:
+    prerequisites: []
+    complementary: [manipulation-task-planning, sim-to-real-validation]
+    successors: [manipulation-task-planning]
+    related: [dataset-profiling, agent-telemetry-instrumentation]
+  complexity: expert
+  build_speed: 1
+  shareability: 2
+  maturity: prototype
+  tags: [robotics, perception, uncertainty, sensor-fusion, safety]
+  author: Agent Skills Compendium
+  license: CC-BY-4.0
+  risk_level: critical
+  required_permissions: [sensor.read, robot.state.read]
+  restricted_actions: [Commanding motion, Acting on perception below task tolerance, Treating unobserved space as free]
+  created_at: "2025-03-22T00:00:00Z"
+  updated_at: "2025-08-11T00:00:00Z"

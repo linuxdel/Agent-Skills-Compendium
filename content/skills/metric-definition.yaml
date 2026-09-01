@@ -1,0 +1,153 @@
+skill:
+  id: skl-metric-definition
+  name: Metric Definition
+  slug: metric-definition
+  version: 1.1.0
+  category: data-analysis
+  layer: L1
+  domain: null
+  description: Turn a vague business concept into a metric with an unambiguous computable definition, boundaries and known failure behaviour.
+  purpose: >-
+    Organisations argue about numbers because the same word names different
+    computations in different teams. This skill produces a definition precise
+    enough that two analysts writing independent queries return identical
+    values, and records what the metric deliberately excludes.
+  trigger: >-
+    A metric is being created, or an existing metric produces different values
+    depending on who computes it.
+  inputs:
+    - name: concept
+      required: true
+      type: string
+      description: The business idea to be measured, in the requester's own words.
+    - name: decision_use
+      required: true
+      type: string
+      description: What decisions the metric will drive, which determines acceptable trade-offs.
+    - name: available_data
+      required: true
+      type: string
+      description: Tables, events or systems that could support the metric.
+    - name: existing_definitions
+      required: false
+      type: string[]
+      description: Definitions already in use, which the new one must either match or explicitly supersede.
+  prerequisites:
+    - dataset-profiling
+  tools:
+    - sql-client
+    - dataframe-runtime
+    - llm-inference
+    - document-generator
+  dependencies:
+    - Profiled understanding of the underlying data grain
+  procedure:
+    - step: Elicit the decision behind the metric
+      description: >-
+        Establish what action changes when the metric moves. A metric no decision
+        depends on should not be built.
+    - step: Fix the population
+      description: >-
+        Define exactly which entities are in scope and which are excluded — test
+        accounts, internal users, churned entities, non-billable activity.
+    - step: Fix the event and the timestamp
+      description: >-
+        Define the qualifying event precisely and state which timestamp assigns it
+        to a period, event time or processing time.
+    - step: Fix the aggregation and the window
+      description: >-
+        Specify the aggregation, the window, whether windows are rolling or
+        calendar, and how partial periods are treated.
+    - step: Define denominator and normalisation
+      description: >-
+        For rates and ratios, define the denominator with the same rigour as the
+        numerator; most metric disputes live in the denominator.
+    - step: Specify edge behaviour
+      description: >-
+        State what the metric returns for zero denominators, late data,
+        backfills, restatements and entities that change segment mid-window.
+    - step: Write the reference implementation
+      description: >-
+        Produce a canonical query and a test case set with expected values, so
+        future implementations can be checked against it.
+    - step: Record what it does not measure
+      description: >-
+        State the questions the metric cannot answer, to prevent misuse by
+        readers who did not commission it.
+  decision_rules:
+    - condition: An existing definition covers the same concept
+      action: Adopt or explicitly supersede it with a migration note; never create a silent parallel definition.
+    - condition: Event time and processing time both exist
+      action: Choose event time for behavioural metrics and processing time for operational ones, and state the choice.
+    - condition: The metric requires data that is not reliably collected
+      action: Report the instrumentation gap and do not ship a proxy without labelling it a proxy.
+    - condition: The denominator can be zero
+      action: Define the return value explicitly rather than allowing nulls to propagate.
+    - condition: Entities can change segment within the window
+      action: Specify snapshot or as-of assignment, since the two give materially different answers.
+  outputs:
+    - name: metric_definition
+      type: document
+      description: Population, event, timestamp, aggregation, window, denominator, edge behaviour, exclusions.
+    - name: reference_query
+      type: string
+      description: The canonical implementation.
+    - name: test_cases
+      type: json
+      description: Input fixtures with expected metric values, including edge cases.
+    - name: does_not_measure
+      type: string[]
+      description: Explicit statements of what the metric is not evidence for.
+  validation:
+    - check: Two independent implementations of the definition return identical values on the test fixtures.
+    - check: Every edge case has a defined return value.
+    - check: The population definition names both inclusions and exclusions.
+    - check: The timestamp choice is stated and justified.
+  failure_modes:
+    - failure: A parallel definition of an existing metric is created and the organisation gains a second truth.
+      mitigation: Search existing definitions first and require explicit supersession.
+    - failure: Test accounts inflate the metric.
+      mitigation: Make exclusions explicit in the population step and test for them.
+    - failure: Backfills silently restate history and dashboards change retroactively.
+      mitigation: Define restatement behaviour and whether the metric is immutable once published.
+    - failure: A proxy is adopted and treated as the real thing.
+      mitigation: Label proxies in the definition name and in the does-not-measure section.
+  escalation:
+    - condition: The metric will be reported externally or used in compensation.
+      action: Escalate for finance or legal review before publication.
+    - condition: Stakeholders disagree on the population definition.
+      action: Escalate the definitional choice rather than picking one silently.
+  examples:
+    - title: Defining monthly active teams for a collaboration product
+      input:
+        concept: How many teams are actually using the product
+        decision_use: Roadmap prioritisation and board reporting
+      output:
+        population: Non-internal workspaces with at least two seats
+        qualifying_event: Any document edit or comment by a member
+        window: Rolling 28 days on event time
+        does_not_measure: [Depth of use, Revenue-weighted engagement]
+    - title: Defining gross margin for a usage-based product
+      input:
+        concept: Margin per customer
+        decision_use: Pricing floor decisions
+      output:
+        denominator: Recognised revenue in the period
+        edge_behaviour: Zero-revenue customers return null, not zero margin
+  related_skills:
+    prerequisites: [dataset-profiling]
+    complementary: [validate-analysis-assumptions, taxonomy-design]
+    successors: [metric-anomaly-diagnosis, cohort-analysis, campaign-performance-readout]
+    related: [variance-analysis, agent-telemetry-instrumentation]
+  complexity: advanced
+  build_speed: 2
+  shareability: 3
+  maturity: production
+  tags: [metrics, definition, analytics, governance, semantics]
+  author: Agent Skills Compendium
+  license: CC-BY-4.0
+  risk_level: medium
+  required_permissions: [data.read, document.write]
+  restricted_actions: [Publishing a metric that silently conflicts with an existing definition]
+  created_at: "2025-01-16T00:00:00Z"
+  updated_at: "2025-08-20T00:00:00Z"

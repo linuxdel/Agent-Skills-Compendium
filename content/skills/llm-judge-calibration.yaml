@@ -1,0 +1,145 @@
+skill:
+  id: skl-llm-judge-calibration
+  name: LLM Judge Calibration
+  slug: llm-judge-calibration
+  version: 1.0.0
+  category: agent-evaluation
+  layer: L5
+  domain: null
+  description: Establish whether a model-based grader agrees with human judgement before its scores are used to make decisions.
+  purpose: >-
+    Model graders are adopted because they are cheap and then trusted because
+    they are consistent, but consistency is not accuracy. This skill measures
+    agreement against human labels, characterises the judge's systematic biases,
+    and defines the range within which its scores may be used.
+  trigger: >-
+    A model is being used to score outputs, or existing model-produced scores are
+    driving decisions.
+  inputs:
+    - name: judge_definition
+      required: true
+      type: string
+      description: The grading prompt, rubric and model used.
+    - name: human_labels
+      required: true
+      type: string
+      description: A human-labelled sample, with inter-human agreement measured.
+    - name: score_use
+      required: true
+      type: string
+      description: What decisions the scores drive, which sets the required agreement.
+    - name: output_population
+      required: false
+      type: string
+      description: The distribution of outputs being scored.
+  prerequisites:
+    - eval-set-design
+  tools:
+    - eval-harness
+    - llm-inference
+    - statistics-engine
+    - dataframe-runtime
+  dependencies:
+    - A human-labelled sample large enough to measure agreement
+  procedure:
+    - step: Establish the human ceiling
+      description: >-
+        Measure agreement between human labellers first. A judge cannot be
+        expected to exceed the agreement humans achieve with each other.
+    - step: Measure judge-human agreement
+      description: >-
+        Compare judge scores against human labels on the same items using an
+        agreement statistic, not accuracy against a single labeller.
+    - step: Characterise systematic bias
+      description: >-
+        Test for known biases — position, length, verbosity, self-preference,
+        formatting and sycophancy toward assertive answers.
+    - step: Test stability
+      description: >-
+        Re-run the judge on identical items and across paraphrased rubrics to
+        measure variance from the grading process itself.
+    - step: Find the disagreement pattern
+      description: >-
+        Examine where judge and humans diverge; the pattern usually reveals a
+        rubric ambiguity rather than random error.
+    - step: Define the usable range
+      description: >-
+        State the score range and item classes where the judge is reliable, and
+        where human review is required.
+    - step: Set drift monitoring
+      description: >-
+        Define periodic re-calibration, since model updates and distribution
+        shifts both degrade agreement silently.
+  decision_rules:
+    - condition: Judge-human agreement is below inter-human agreement by a material margin
+      action: Do not use the judge for decisions; fix the rubric or use humans.
+    - condition: A systematic bias is detected
+      action: Correct the rubric or the presentation before use; do not adjust scores after the fact.
+    - condition: Scores drive a consequential decision
+      action: Require human review at the decision boundary regardless of overall agreement.
+    - condition: The judge scores outputs from the same model family
+      action: Test explicitly for self-preference bias.
+    - condition: Agreement was measured on a different distribution
+      action: Re-calibrate; agreement does not transfer across distributions.
+  outputs:
+    - name: agreement_report
+      type: object
+      description: Judge-human agreement against the inter-human ceiling, with statistics.
+    - name: bias_profile
+      type: json
+      description: Systematic biases tested and detected, with magnitude.
+    - name: usable_range
+      type: document
+      description: Where the judge may be relied on and where human review is required.
+    - name: recalibration_schedule
+      type: object
+      description: Cadence and triggers for re-measuring agreement.
+  validation:
+    - check: Inter-human agreement was measured before judge agreement.
+    - check: Position, length and self-preference biases were explicitly tested.
+    - check: Stability across repeated runs was measured.
+    - check: The usable range names item classes, not just a score threshold.
+  failure_modes:
+    - failure: A consistent judge is trusted while consistently wrong.
+      mitigation: Measure agreement with humans, not self-consistency.
+    - failure: The judge rewards longer answers and quality declines while scores rise.
+      mitigation: Test length and verbosity bias explicitly.
+    - failure: A judge scoring its own model family systematically favours it.
+      mitigation: Test self-preference and use a different family where possible.
+    - failure: Agreement measured once degrades silently after a model update.
+      mitigation: Schedule re-calibration and monitor drift.
+  escalation:
+    - condition: The judge is already driving decisions and agreement proves inadequate.
+      action: Escalate immediately; decisions made on those scores may need revisiting.
+    - condition: Human labels themselves disagree substantially.
+      action: Escalate the rubric definition; the task specification is the problem.
+  examples:
+    - title: Calibrating a helpfulness grader
+      input:
+        score_use: Gating model releases
+      output:
+        agreement_report: {inter_human: 0.81, judge_human: 0.62}
+        usable_range: Not usable for release gating; usable for triaging obvious failures
+    - title: Calibrating a code-correctness grader
+      input:
+        judge_definition: Rubric-based grader with reference solution
+      output:
+        bias_profile: {length: none detected, self_preference: 6 point uplift on same-family outputs}
+        recalibration_schedule: On every model update and quarterly
+  related_skills:
+    prerequisites: [eval-set-design]
+    complementary: [failure-taxonomy, statistical-significance-test]
+    successors: [autonomy-staging]
+    related: [source-credibility-assessment, multi-agent-conflict-resolution]
+  complexity: expert
+  build_speed: 2
+  shareability: 3
+  maturity: beta
+  tags: [evaluation, llm-judge, calibration, bias, agreement]
+  author: Agent Skills Compendium
+  license: CC-BY-4.0
+  risk_level: high
+  required_permissions: [eval.read, model.invoke]
+  restricted_actions: [Using an uncalibrated judge for release or safety decisions]
+  created_at: "2025-04-11T00:00:00Z"
+  updated_at: "2025-08-24T00:00:00Z"

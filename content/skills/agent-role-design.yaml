@@ -1,0 +1,146 @@
+skill:
+  id: skl-agent-role-design
+  name: Agent Role Design
+  slug: agent-role-design
+  version: 1.0.0
+  category: multi-agent-systems
+  layer: L5
+  domain: null
+  description: Define what each agent in a system is responsible for, what it may use, and where its authority ends.
+  purpose: >-
+    Multi-agent systems fail on ambiguous responsibility long before they fail on
+    capability. This skill assigns each role a single accountable outcome, scopes
+    its tools and permissions to that outcome, and defines the handoff contracts
+    between roles so that no work falls between them.
+  trigger: >-
+    A multi-agent system is being designed, or an existing one shows duplicated
+    work, gaps or conflicting actions.
+  inputs:
+    - name: system_objective
+      required: true
+      type: string
+      description: What the system as a whole must accomplish.
+    - name: work_types
+      required: true
+      type: string[]
+      description: The distinct kinds of work involved, which suggest role boundaries.
+    - name: available_tools
+      required: true
+      type: string[]
+      description: Tools that could be assigned, with their risk profiles.
+    - name: autonomy_policy
+      required: false
+      type: string
+      description: What the system may do without human approval.
+  prerequisites: []
+  tools:
+    - sub-agent
+    - policy-engine
+    - llm-inference
+    - audit-log
+    - document-generator
+  dependencies:
+    - A tool inventory with permission scopes
+  procedure:
+    - step: Assign one accountable outcome per role
+      description: >-
+        Give each role a single outcome it owns. Roles with two outcomes trade one
+        off against the other invisibly.
+    - step: Separate execution from verification
+      description: >-
+        Never let a role verify its own output. Independent verification is the
+        main structural defence against systematic error.
+    - step: Scope tools to the outcome
+      description: >-
+        Grant each role the minimum tool set for its outcome. Broad tool access
+        turns a narrow failure into a wide one.
+    - step: Define authority limits
+      description: >-
+        State what each role may decide alone, what it must escalate, and what it
+        may never do.
+    - step: Specify handoff contracts
+      description: >-
+        Define the artifact passed between roles, its shape and its acceptance
+        criteria, so handoffs do not require negotiation.
+    - step: Design the escalation path
+      description: >-
+        Define where each role escalates and what information it must carry, so
+        escalation is a first-class path rather than an error case.
+    - step: Test for gaps and overlaps
+      description: >-
+        Walk the objective end to end and confirm every step has exactly one
+        accountable role.
+  decision_rules:
+    - condition: A role would verify its own output
+      action: Split verification into a separate role with independent context.
+    - condition: Two roles could both act on the same resource
+      action: Assign exclusive ownership; concurrent authority produces conflicting actions.
+    - condition: A role needs a high-risk tool for a minority of its work
+      action: Split that work into a separate role rather than widening the tool scope.
+    - condition: A step in the objective has no accountable role
+      action: Assign it explicitly; unowned steps are silently skipped.
+    - condition: A role's authority is undefined for a case
+      action: Default to escalation rather than to permission.
+  outputs:
+    - name: role_definitions
+      type: json
+      description: Each role with its outcome, tools, permissions, authority limits and escalation path.
+    - name: handoff_contracts
+      type: json
+      description: Artifacts passed between roles with shape and acceptance criteria.
+    - name: coverage_map
+      type: json
+      description: Each step of the objective mapped to exactly one accountable role.
+    - name: permission_matrix
+      type: json
+      description: Roles against tools and permissions, with justification per grant.
+  validation:
+    - check: Every role has exactly one accountable outcome.
+    - check: No role verifies its own output.
+    - check: Every step of the objective maps to exactly one role.
+    - check: Every tool grant is justified by the role's outcome.
+    - check: Undefined cases default to escalation, not to permission.
+  failure_modes:
+    - failure: An agent marks its own work complete and systematic errors persist.
+      mitigation: Separate execution from verification structurally.
+    - failure: Two agents act on the same resource and produce conflicting state.
+      mitigation: Assign exclusive resource ownership.
+    - failure: A broad tool grant turns a small failure into a wide one.
+      mitigation: Scope tools to the minimum required by the outcome.
+    - failure: A step is assumed to be someone's job and is done by nobody.
+      mitigation: Produce and check the coverage map.
+  escalation:
+    - condition: A role would require permissions exceeding the system's autonomy policy.
+      action: Escalate the policy question rather than granting the permission.
+    - condition: Roles cannot be separated without making the system unworkable.
+      action: Escalate the design constraint; do not silently merge execution and verification.
+  examples:
+    - title: Designing roles for an automated code change system
+      input:
+        system_objective: Implement, verify and land small changes with human approval at merge
+      output:
+        role_definitions: 4 roles — orienter, implementer, verifier, releaser
+        permission_matrix: Only the releaser holds deploy permissions; implementer cannot merge
+    - title: Designing roles for a research pipeline
+      input:
+        system_objective: Produce sourced competitive assessments on a schedule
+      output:
+        coverage_map: 7 steps, each with one owner
+        handoff_contracts: Claim table shape fixed between collector and synthesiser
+  related_skills:
+    prerequisites: []
+    complementary: [task-decomposition-delegation, tool-permission-scoping, autonomy-staging]
+    successors: [multi-agent-conflict-resolution, agent-telemetry-instrumentation]
+    related: [process-capture, threat-model-construction]
+  complexity: advanced
+  build_speed: 2
+  shareability: 3
+  maturity: beta
+  tags: [multi-agent, roles, authority, permissions, verification]
+  author: Agent Skills Compendium
+  license: CC-BY-4.0
+  risk_level: high
+  required_permissions: [policy.write]
+  restricted_actions: [Granting a role verification authority over its own output, Granting tools beyond the outcome scope]
+  created_at: "2025-03-28T00:00:00Z"
+  updated_at: "2025-08-20T00:00:00Z"

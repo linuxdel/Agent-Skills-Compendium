@@ -1,0 +1,145 @@
+skill:
+  id: skl-automation-opportunity-assessment
+  name: Automation Opportunity Assessment
+  slug: automation-opportunity-assessment
+  version: 1.0.0
+  category: workflow-automation
+  layer: L1
+  domain: null
+  description: Decide whether a process should be automated at all, and which part of it, by comparing benefit against the full cost of automation ownership.
+  purpose: >-
+    Automation is usually justified by time saved on the happy path and regretted
+    on maintenance, exception handling and the failures nobody detects. This
+    skill scores candidates on stability, exception load, error cost and
+    ownership, and recommends the scope worth automating rather than the whole
+    process by default.
+  trigger: >-
+    A process has been captured and someone proposes automating it.
+  inputs:
+    - name: process_map
+      required: true
+      type: string
+      description: The captured process including exceptions and judgement points.
+    - name: volume_and_cost
+      required: true
+      type: object
+      description: Frequency, duration and error rate per path.
+    - name: error_consequence
+      required: true
+      type: string
+      description: What happens when the process is performed wrongly, which sets the required reliability.
+    - name: ownership_capacity
+      required: false
+      type: string
+      description: Who will maintain the automation, which is the most common unmodelled cost.
+  prerequisites:
+    - process-capture
+  tools:
+    - spreadsheet
+    - llm-inference
+    - dataframe-runtime
+    - document-generator
+  dependencies:
+    - A process map that includes exception frequencies
+  procedure:
+    - step: Score process stability
+      description: >-
+        Assess how often the process changes. Automating an unstable process
+        transfers change cost from execution to maintenance.
+    - step: Compute the automatable share
+      description: >-
+        Separate rule-based steps from judgement steps and compute the share of
+        volume that a rule-based automation would actually handle.
+    - step: Model the full cost
+      description: >-
+        Include build, integration, monitoring, exception handling, maintenance
+        and the cost of failures that go undetected.
+    - step: Set the reliability bar
+      description: >-
+        Derive the required reliability from the error consequence, and check
+        whether that bar is achievable with the proposed approach.
+    - step: Consider elimination and simplification first
+      description: >-
+        Test whether the process can be removed or simplified. Automating an
+        unnecessary process makes it permanent.
+    - step: Choose the scope
+      description: >-
+        Recommend automating the segment with the best ratio of volume to
+        exception load, rather than the whole process.
+    - step: Define human retention
+      description: >-
+        State which steps stay human and how exceptions reach them, including how
+        the human keeps enough context to act competently.
+  decision_rules:
+    - condition: The process changes more often than quarterly
+      action: Recommend against automation until it stabilises, or automate only the stable segment.
+    - condition: Judgement steps account for a large share of volume
+      action: Automate the surrounding steps and keep the judgement human.
+    - condition: No owner exists for the automation
+      action: Do not recommend automation; unowned automation degrades silently.
+    - condition: The process could be eliminated
+      action: Recommend elimination over automation.
+    - condition: Error consequence is severe and detection is weak
+      action: Require a verification step or a human checkpoint as a condition of automation.
+  outputs:
+    - name: recommendation
+      type: document
+      description: Automate, partially automate, simplify first, or do not automate — with reasoning.
+    - name: scope_proposal
+      type: json
+      description: Which steps are in scope, which stay human, and why.
+    - name: cost_benefit
+      type: json
+      description: Full cost model against expected benefit over a stated horizon.
+    - name: reliability_requirement
+      type: object
+      description: The required reliability derived from error consequence, and how it will be verified.
+  validation:
+    - check: The cost model includes maintenance and exception handling, not only build.
+    - check: Judgement steps are excluded from the automatable share.
+    - check: An owner is named for any recommended automation.
+    - check: Elimination and simplification were considered before automation.
+  failure_modes:
+    - failure: A process is automated and its maintenance exceeds the labour it replaced.
+      mitigation: Model full ownership cost over the horizon, not build cost.
+    - failure: Automation handles 60 percent of volume and the remaining 40 percent becomes harder for the humans left.
+      mitigation: Model the residual human work explicitly, including lost context.
+    - failure: An unnecessary process is automated and becomes permanent.
+      mitigation: Run the elimination test first.
+    - failure: Silent failures accumulate because nobody monitors the automation.
+      mitigation: Make monitoring and ownership conditions of the recommendation.
+  escalation:
+    - condition: Automation would remove a control or a segregation of duties.
+      action: Escalate to the control owner; do not design around it.
+    - condition: Automation would displace roles.
+      action: Escalate the organisational consequence to leadership rather than treating it as a benefit line.
+  examples:
+    - title: Assessing invoice approval automation
+      input:
+        error_consequence: Duplicate or incorrect payment to suppliers
+        ownership_capacity: No dedicated owner identified
+      output:
+        recommendation: Partially automate — match and route only; keep approval human
+        reliability_requirement: {bar: 99.9 percent on matching, verification: daily reconciliation}
+    - title: Assessing report generation automation
+      input:
+        error_consequence: Stakeholders read a stale number
+      output:
+        recommendation: Simplify first — three of the six reports have no reader
+  related_skills:
+    prerequisites: [process-capture]
+    complementary: [idempotent-integration-design, dry-run-rehearsal]
+    successors: [idempotent-integration-design, runbook-authoring]
+    related: [autonomy-staging, risk-weighted-recommendation]
+  complexity: intermediate
+  build_speed: 3
+  shareability: 3
+  maturity: beta
+  tags: [automation, assessment, cost, ownership, operations]
+  author: Agent Skills Compendium
+  license: CC-BY-4.0
+  risk_level: medium
+  required_permissions: [document.write]
+  restricted_actions: [Recommending automation without a named owner]
+  created_at: "2025-02-02T00:00:00Z"
+  updated_at: "2025-07-31T00:00:00Z"

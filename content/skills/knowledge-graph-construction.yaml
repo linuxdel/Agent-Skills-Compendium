@@ -1,0 +1,152 @@
+skill:
+  id: skl-knowledge-graph-construction
+  name: Knowledge Graph Construction
+  slug: knowledge-graph-construction
+  version: 1.0.0
+  category: knowledge-management
+  layer: L2
+  domain: null
+  description: Extract entities and typed relationships from a corpus into a graph that answers multi-hop questions with traceable provenance.
+  purpose: >-
+    Vector search retrieves passages; it cannot answer questions that require
+    following relationships across documents. This skill builds a graph where
+    entities are resolved, relationships are typed and dated, and every edge
+    carries the source it came from — so a multi-hop answer can be audited.
+  trigger: >-
+    Questions require connecting facts across documents, or the same entity
+    appears under different names across a corpus.
+  inputs:
+    - name: corpus
+      required: true
+      type: string
+      description: The documents or data to extract from.
+    - name: question_types
+      required: true
+      type: string[]
+      description: The questions the graph must answer, which determine the schema.
+    - name: entity_types
+      required: false
+      type: string[]
+      description: Known entity types, if a schema already exists.
+    - name: authority_sources
+      required: false
+      type: string[]
+      description: Sources that win on conflict, such as a system of record.
+  prerequisites:
+    - taxonomy-design
+    - source-credibility-assessment
+  tools:
+    - document-parser
+    - llm-inference
+    - knowledge-graph
+    - embedding-index
+    - file-system
+  dependencies:
+    - A graph store supporting typed edges and property metadata
+  procedure:
+    - step: Derive the schema from the questions
+      description: >-
+        Define entity and relationship types from the questions to be answered.
+        An unconstrained schema produces a graph nothing can query.
+    - step: Extract candidate entities and relations
+      description: >-
+        Extract with the source span retained for every candidate, so every
+        assertion remains traceable.
+    - step: Resolve entities
+      description: >-
+        Merge aliases, abbreviations and near-duplicates into canonical nodes,
+        and record the merge evidence. Bad resolution silently corrupts every path.
+    - step: Type and date the edges
+      description: >-
+        Assign a relationship type and a validity period. Relationships that were
+        true once are not true forever.
+    - step: Resolve conflicts
+      description: >-
+        Where sources disagree, apply the authority order, retain the conflict on
+        the edge, and never silently drop one side.
+    - step: Attach provenance
+      description: >-
+        Every node and edge carries its source document, span and extraction
+        confidence.
+    - step: Validate against the questions
+      description: >-
+        Run the target questions as graph queries and check that the answers are
+        correct and their paths are sensible.
+    - step: Define refresh and decay
+      description: >-
+        State how the graph is updated, how stale edges are expired, and how
+        deletions propagate.
+  decision_rules:
+    - condition: Entity resolution confidence is low
+      action: Keep the nodes separate with a suspected-same link rather than merging incorrectly.
+    - condition: Two sources assert conflicting relationships
+      action: Retain both with authority ranking and expose the conflict to queries.
+    - condition: A relationship has no time validity in the source
+      action: Record it as undated and exclude it from time-sensitive queries.
+    - condition: Extraction confidence is below threshold
+      action: Store as a candidate edge excluded from answers until confirmed.
+    - condition: The schema cannot answer a target question
+      action: Extend the schema rather than working around it at query time.
+  outputs:
+    - name: graph
+      type: graph
+      description: Typed nodes and edges with provenance and validity periods.
+    - name: schema
+      type: json
+      description: Entity and relationship types with their constraints.
+    - name: resolution_report
+      type: json
+      description: Merges performed, merges declined, and the evidence for each.
+    - name: query_validation
+      type: json
+      description: Target questions with their graph answers and traversal paths.
+  validation:
+    - check: Every edge carries a source reference and an extraction confidence.
+    - check: The target questions are answerable and their paths are correct.
+    - check: Entity merges are evidenced and reversible.
+    - check: Conflicting assertions are retained rather than silently resolved.
+  failure_modes:
+    - failure: Two distinct entities are merged and every path through them is wrong.
+      mitigation: Require evidence for merges and prefer suspected-same links under uncertainty.
+    - failure: Stale relationships produce confidently wrong multi-hop answers.
+      mitigation: Date every edge and expire by policy.
+    - failure: The graph is built without target questions and cannot answer any.
+      mitigation: Derive the schema from the questions first and validate against them.
+    - failure: Extraction hallucinates relationships that no source states.
+      mitigation: Require a source span for every edge and reject unsourced assertions.
+  escalation:
+    - condition: The corpus contains personal or regulated data being linked across sources.
+      action: Escalate to privacy review; linkage can create sensitive inferences that individual sources do not.
+    - condition: Conflicts concentrate in a source that appears unreliable.
+      action: Escalate the source's status rather than resolving conflicts case by case.
+  examples:
+    - title: Building an organisational knowledge graph from internal documents
+      input:
+        question_types: [Who owns this service, What depends on it, Who decided this]
+      output:
+        nodes: 4210
+        edges: 11800
+        resolution_report: {merges: 340, declined: 62}
+    - title: Building a supplier risk graph
+      input:
+        question_types: [Which suppliers share a subprocessor, Which contracts expire under a single owner]
+        authority_sources: [Procurement system of record]
+      output:
+        query_validation: 6 of 6 target questions answered with traceable paths
+  related_skills:
+    prerequisites: [taxonomy-design, source-credibility-assessment]
+    complementary: [memory-hygiene, knowledge-synthesis-brief]
+    successors: [knowledge-synthesis-brief, situation-assessment]
+    related: [codebase-orientation, account-research]
+  complexity: expert
+  build_speed: 1
+  shareability: 3
+  maturity: prototype
+  tags: [knowledge-graph, entities, provenance, retrieval, extraction]
+  author: Agent Skills Compendium
+  license: CC-BY-4.0
+  risk_level: medium
+  required_permissions: [document.read, graph.write]
+  restricted_actions: [Linking personal data across sources without privacy review]
+  created_at: "2025-03-02T00:00:00Z"
+  updated_at: "2025-08-13T00:00:00Z"

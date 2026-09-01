@@ -1,0 +1,146 @@
+skill:
+  id: skl-knowledge-synthesis-brief
+  name: Knowledge Synthesis Brief
+  slug: knowledge-synthesis-brief
+  version: 1.0.0
+  category: knowledge-management
+  layer: L2
+  domain: null
+  description: Answer an organisational question from internal knowledge, distinguishing what is documented, what is contradicted and what is only in people's heads.
+  purpose: >-
+    Internal knowledge is scattered across documents, tickets, chat and code, at
+    different ages and authority levels. This skill assembles an answer that
+    marks each element's source and currency, and states plainly which parts of
+    the answer no document supports.
+  trigger: >-
+    Someone asks a question whose answer exists somewhere inside the organisation
+    but not in one place.
+  inputs:
+    - name: question
+      required: true
+      type: string
+      description: The question, stated precisely enough to know when it has been answered.
+    - name: sources
+      required: true
+      type: string[]
+      description: Systems to search — document stores, tickets, chat, code, wikis.
+    - name: authority_order
+      required: false
+      type: string[]
+      description: Which sources win when they conflict, such as code over wiki.
+    - name: recency_requirement
+      required: false
+      type: string
+      description: How current the answer must be.
+  prerequisites:
+    - source-credibility-assessment
+  tools:
+    - embedding-index
+    - document-parser
+    - code-search
+    - chat-platform
+    - issue-tracker
+    - knowledge-graph
+    - llm-inference
+  dependencies:
+    - Read access to the internal systems being searched
+  procedure:
+    - step: Decompose the question
+      description: >-
+        Break it into sub-questions that different sources can answer, since no
+        single system holds the whole answer.
+    - step: Search each source class
+      description: >-
+        Query documents, tickets, chat and code separately, since each encodes a
+        different kind of truth about the organisation.
+    - step: Date every element
+      description: >-
+        Attach a date to each piece of evidence. Undated internal knowledge is the
+        primary source of confidently wrong answers.
+    - step: Apply the authority order
+      description: >-
+        Where sources conflict, prefer the system of record — usually code and
+        configuration over prose — and report the conflict.
+    - step: Detect the undocumented
+      description: >-
+        Identify sub-questions no source answers, which is where the organisation
+        depends on individuals.
+    - step: Assemble the answer
+      description: >-
+        Deliver the answer with per-element sourcing, currency and confidence.
+    - step: Recommend durable capture
+      description: >-
+        Where the answer depended on scattered or tacit knowledge, recommend where
+        it should be written down.
+  decision_rules:
+    - condition: A document and the code disagree
+      action: Follow the code, report the stale document and name its owner.
+    - condition: The most relevant evidence is a chat message
+      action: Treat it as low-authority, seek confirmation in a system of record, and mark it if none exists.
+    - condition: No source answers a sub-question
+      action: Report it as undocumented and name who likely knows.
+    - condition: Evidence predates a known reorganisation or migration
+      action: Treat it as historical and seek current confirmation.
+  outputs:
+    - name: answer
+      type: document
+      description: The synthesised answer with per-element sourcing and currency.
+    - name: source_map
+      type: json
+      description: Each element mapped to its source, date and authority level.
+    - name: undocumented_gaps
+      type: json
+      description: Sub-questions no source answers, with likely holders of the knowledge.
+    - name: stale_documents
+      type: string[]
+      description: Documents found to contradict the system of record, with owners.
+  validation:
+    - check: Every element of the answer carries a source and a date.
+    - check: Conflicts between sources are reported rather than silently resolved.
+    - check: Undocumented gaps are stated explicitly.
+    - check: The recency requirement is met or its violation is flagged.
+  failure_modes:
+    - failure: A confident answer is assembled from documents that describe a system replaced last year.
+      mitigation: Date every element and apply authority order favouring systems of record.
+    - failure: A chat message is treated as a decision record.
+      mitigation: Rank chat as low authority and require confirmation.
+    - failure: Gaps are filled with plausible inference and presented as fact.
+      mitigation: Require the undocumented-gaps output to be populated rather than closed by reasoning.
+    - failure: The same question is asked again next quarter with the same effort.
+      mitigation: Recommend durable capture as a required output.
+  escalation:
+    - condition: The answer depends entirely on one individual's knowledge.
+      action: Escalate the key-person risk alongside the answer.
+    - condition: Search reveals sensitive material outside the requester's access.
+      action: Do not include it; escalate the access question to the data owner.
+  examples:
+    - title: Answering why a service was built this way
+      input:
+        question: Why does the billing service write directly to the ledger rather than through the queue?
+        authority_order: [Code, Decision records, Tickets, Chat]
+      output:
+        answer_confidence: medium
+        undocumented_gaps: [The original latency constraint is not recorded anywhere]
+        stale_documents: [Architecture wiki page describing the queue path]
+    - title: Answering an operational ownership question
+      input:
+        question: Who owns the customer export pipeline and what is its on-call path?
+      output:
+        source_map: {ownership: service catalogue 2025-06, on-call: rota system 2025-08}
+  related_skills:
+    prerequisites: [source-credibility-assessment]
+    complementary: [knowledge-graph-construction, memory-hygiene, evidence-synthesis]
+    successors: [executive-brief, situation-assessment]
+    related: [codebase-orientation, document-restructuring]
+  complexity: intermediate
+  build_speed: 3
+  shareability: 3
+  maturity: beta
+  tags: [knowledge, internal-search, synthesis, currency, gaps]
+  author: Agent Skills Compendium
+  license: CC-BY-4.0
+  risk_level: medium
+  required_permissions: [document.read, repo.read, chat.read]
+  restricted_actions: [Surfacing content outside the requester's access scope]
+  created_at: "2025-03-08T00:00:00Z"
+  updated_at: "2025-08-17T00:00:00Z"

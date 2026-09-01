@@ -1,0 +1,149 @@
+skill:
+  id: skl-pricing-strategy
+  name: Pricing Strategy
+  slug: pricing-strategy
+  version: 1.0.0
+  category: business-strategy
+  layer: L4
+  domain: commercial
+  description: Set price and packaging from buyer value and willingness to pay, and model the revenue consequences before committing.
+  purpose: >-
+    Pricing is usually set by cost plus a margin or by copying a competitor, both
+    of which discard most of the available value. This skill grounds price in the
+    buyer's alternative and the value delivered, chooses a metric that scales with
+    that value, and models migration effects on existing customers.
+  trigger: >-
+    A new offering is being priced, or an existing price no longer matches the
+    value delivered or the segments being won.
+  inputs:
+    - name: offering
+      required: true
+      type: string
+      description: What is being sold, including what is bundled and what is separate.
+    - name: segments
+      required: true
+      type: string[]
+      description: Buyer segments, their alternatives and their value drivers.
+    - name: cost_structure
+      required: true
+      type: string
+      description: Marginal and fixed cost, which sets the floor but never the price.
+    - name: existing_customers
+      required: false
+      type: string
+      description: Current contracts and prices, which constrain any change through migration risk.
+  prerequisites:
+    - positioning-framework
+  tools:
+    - spreadsheet
+    - dataframe-runtime
+    - sql-client
+    - web-search
+    - llm-inference
+  dependencies:
+    - Access to current pricing, contract and usage data where customers already exist
+  procedure:
+    - step: Quantify value against the alternative
+      description: >-
+        Establish what the buyer gains relative to what they would otherwise do,
+        in their own units — cost avoided, revenue gained, risk removed.
+    - step: Choose the pricing metric
+      description: >-
+        Select a metric that grows with delivered value, is predictable for the
+        buyer, and cannot be gamed. The metric matters more than the number.
+    - step: Set the fence structure
+      description: >-
+        Design packaging so that segments self-select, using capability and scale
+        fences rather than artificial restrictions that feel punitive.
+    - step: Establish the price range
+      description: >-
+        Bound price by the value ceiling and the cost floor, and position within
+        the range according to the strategic goal.
+    - step: Model revenue and mix
+      description: >-
+        Project the effect on new business, expansion and churn across segments,
+        including buyers who become unprofitable to serve.
+    - step: Plan migration
+      description: >-
+        For existing customers, model grandfathering, notice periods and the
+        churn risk of forced migration.
+    - step: Define the change discipline
+      description: >-
+        State how often price will change, what triggers a change, and what the
+        discounting authority is, so the price survives contact with sales.
+  decision_rules:
+    - condition: Price is being set from cost plus a margin
+      action: Rebuild from value; cost sets the floor only.
+    - condition: The pricing metric does not grow with value
+      action: Change the metric before adjusting the number.
+    - condition: A price change would force migration for existing customers
+      action: Model churn explicitly and consider grandfathering with a sunset date.
+    - condition: Discounting exceeds a defined threshold in practice
+      action: Treat the list price as fictional and reset it to the realised price.
+    - condition: The metric can be gamed by the buyer
+      action: Reject it; gamed metrics destroy the pricing relationship over time.
+  outputs:
+    - name: pricing_recommendation
+      type: document
+      description: Metric, packaging, price points, fences and rationale.
+    - name: revenue_model
+      type: json
+      description: Projected revenue, mix and churn by segment under the recommendation.
+    - name: migration_plan
+      type: document
+      description: Treatment of existing customers, notice and grandfathering.
+    - name: value_analysis
+      type: json
+      description: Quantified buyer value per segment relative to their alternative.
+  validation:
+    - check: Price is justified by buyer value, with cost used only as a floor.
+    - check: The pricing metric grows with delivered value and is predictable for the buyer.
+    - check: Revenue effects are modelled per segment, including churn.
+    - check: Existing customer treatment is defined where they exist.
+  failure_modes:
+    - failure: Cost-plus pricing leaves most of the value with the buyer.
+      mitigation: Require the value quantification step before any number is set.
+    - failure: A per-seat metric is used for a product whose value scales with usage.
+      mitigation: Select the metric from the value driver, not from category convention.
+    - failure: A price increase triggers a churn wave among the best customers.
+      mitigation: Model migration by segment and grandfather where retention value exceeds uplift.
+    - failure: List price is undermined by uncontrolled discounting.
+      mitigation: Set discount authority and monitor realised price against list.
+  escalation:
+    - condition: The pricing change affects existing contractual commitments.
+      action: Route to legal and finance before communicating anything externally.
+    - condition: The recommendation implies segment exit.
+      action: Escalate the strategic consequence rather than presenting it as a pricing detail.
+  examples:
+    - title: Repricing a per-seat product toward usage
+      input:
+        offering: Collaboration platform, currently per seat
+        segments: [Small teams, Enterprise platform teams]
+      output:
+        metric: Hybrid — platform fee plus active-collaborator usage
+        migration_plan: Grandfather existing seats for 12 months with opt-in migration
+        revenue_model: {net_effect: plus 14 percent, churn_risk_segment: Small teams}
+    - title: Pricing a new compliance module
+      input:
+        offering: Continuous control monitoring add-on
+        cost_structure: Low marginal, high fixed
+      output:
+        price_range: Anchored on audit cost avoided per control per year
+        fences: [Control count, Framework coverage]
+  related_skills:
+    prerequisites: [positioning-framework]
+    complementary: [market-sizing, competitive-intelligence-report]
+    successors: [risk-weighted-recommendation, campaign-performance-readout]
+    related: [variance-analysis, executive-brief]
+  complexity: expert
+  build_speed: 1
+  shareability: 3
+  maturity: beta
+  tags: [pricing, packaging, monetisation, strategy, revenue]
+  author: Agent Skills Compendium
+  license: CC-BY-4.0
+  risk_level: high
+  required_permissions: [data.read, document.write]
+  restricted_actions: [Communicating price changes to customers, Modifying contracts]
+  created_at: "2025-02-26T00:00:00Z"
+  updated_at: "2025-08-06T00:00:00Z"
