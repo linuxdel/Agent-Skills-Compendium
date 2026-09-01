@@ -4,6 +4,14 @@ import { LAYER_NAMES } from "@/lib/format";
 import { Logo } from "./logo";
 import { SearchDialog, type SearchEntry } from "./search-dialog";
 
+/** Rendered verbatim as both the label and the href, so they cannot diverge. */
+const API_ROUTES = [
+  "/api/skills",
+  "/api/categories",
+  "/api/layers",
+  "/api/search?q=incident",
+];
+
 const NAV = [
   { href: "/skills", label: "Skills" },
   { href: "/categories", label: "Categories" },
@@ -131,26 +139,25 @@ export async function SiteFooter() {
         <div>
           <span className="label">Machine interface</span>
           <ul className="mt-3 space-y-1.5 font-mono text-[0.8125rem] text-[var(--color-ink-muted)]">
-            <li>
-              <Link href="/api/skills" className="hover:text-[var(--color-ink)]">
-                GET /api/skills
-              </Link>
-            </li>
-            <li>
-              <Link href="/api/categories" className="hover:text-[var(--color-ink)]">
-                GET /api/categories
-              </Link>
-            </li>
-            <li>
-              <Link href="/api/layers" className="hover:text-[var(--color-ink)]">
-                GET /api/layers
-              </Link>
-            </li>
-            <li>
-              <Link href="/api/search?q=incident" className="hover:text-[var(--color-ink)]">
-                GET /api/search
-              </Link>
-            </li>
+            {API_ROUTES.map((route) => (
+              <li key={route}>
+                {/*
+                  A plain anchor, not next/link: Link prefetches on hover and on
+                  viewport entry, which would fire real API requests just from
+                  scrolling the footer into view. These also open in a new tab so
+                  a reader landing on raw JSON does not lose the site.
+                */}
+                <a
+                  href={route}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="hover:text-[var(--color-ink)]"
+                >
+                  GET {route}
+                  <span className="sr-only"> (opens in a new tab)</span>
+                </a>
+              </li>
+            ))}
           </ul>
         </div>
         <div>
