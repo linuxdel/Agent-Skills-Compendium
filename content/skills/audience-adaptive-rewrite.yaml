@@ -133,7 +133,7 @@ skill:
   maturity: production
   tags: [writing, audience, rewriting, fidelity, communication]
   author: Agent Skills Compendium
-  license: CC-BY-4.0
+  license: MIT
   risk_level: medium
   required_permissions: [document.write]
   restricted_actions: [Paraphrasing regulated or contractual language, Adding certainty absent from the source]

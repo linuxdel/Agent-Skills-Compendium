@@ -149,7 +149,7 @@ skill:
   maturity: production
   tags: [debugging, root-cause, engineering, reproduction, hypothesis]
   author: Agent Skills Compendium
-  license: CC-BY-4.0
+  license: MIT
   risk_level: medium
   required_permissions: [repo.read, shell.execute, logs.read]
   restricted_actions: [Accessing production systems without approval, Modifying production data to test a hypothesis]

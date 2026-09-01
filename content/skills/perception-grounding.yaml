@@ -143,7 +143,7 @@ skill:
   maturity: prototype
   tags: [robotics, perception, uncertainty, sensor-fusion, safety]
   author: Agent Skills Compendium
-  license: CC-BY-4.0
+  license: MIT
   risk_level: critical
   required_permissions: [sensor.read, robot.state.read]
   restricted_actions: [Commanding motion, Acting on perception below task tolerance, Treating unobserved space as free]

@@ -87,10 +87,9 @@ Website: https://jersonboydmilan.com/
 Copyright © 2026 Jerson Boyd Milan. See [COPYRIGHT.md](COPYRIGHT.md),
 [AUTHORS.md](AUTHORS.md) and [PROVENANCE.md](PROVENANCE.md).
 
-Licensed under the [MIT License](LICENSE). Note that skill definitions in
-`content/skills/` currently declare `license: CC-BY-4.0` in their own metadata,
-which is inconsistent with the repository LICENSE — see
-[COPYRIGHT.md](COPYRIGHT.md) for how to reconcile it.
+Licensed under the [MIT License](LICENSE). Every skill definition also carries
+`license: MIT` in its own metadata, so a definition extracted from the registry
+travels with its license attached.
 
 ## What is here
 

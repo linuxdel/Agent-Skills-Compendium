@@ -138,7 +138,7 @@ skill:
   maturity: production
   tags: [dependencies, upgrades, maintenance, risk, engineering]
   author: Agent Skills Compendium
-  license: CC-BY-4.0
+  license: MIT
   risk_level: medium
   required_permissions: [repo.write, shell.execute]
   restricted_actions: [Upgrading directly on the default branch, Deploying without staged exposure]

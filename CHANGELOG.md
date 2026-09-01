@@ -71,12 +71,17 @@ project uses [Semantic Versioning](https://semver.org/).
 - Header logo recoloured from the accent to the ink token, so it matches the
   wordmark and inverts correctly in dark mode
 
+### Changed
+
+- Licensing unified on MIT. The skill schema previously defaulted the per-skill
+  `license` field to `CC-BY-4.0`, which propagated into all 76 definitions and
+  contradicted the repository's MIT LICENSE. The schema default and every
+  definition now read MIT.
+
 ### Known limitations
 
 - Skill execution is out of scope for this release; the data model does not
   preclude it
-- Skill definitions declare `CC-BY-4.0` while the repository LICENSE is MIT;
-  this inconsistency is unresolved (see [COPYRIGHT.md](COPYRIGHT.md))
 - Local commit signing is not configured, so commits authored locally are
   unsigned; only the GitHub-created root commit is verified
 - Typography uses system font stacks rather than a licensed webface

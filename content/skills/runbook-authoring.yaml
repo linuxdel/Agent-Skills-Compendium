@@ -142,7 +142,7 @@ skill:
   maturity: production
   tags: [runbook, operations, procedures, reliability, on-call]
   author: Agent Skills Compendium
-  license: CC-BY-4.0
+  license: MIT
   risk_level: medium
   required_permissions: [document.write, shell.execute]
   restricted_actions: [Embedding credentials in the runbook, Publishing an untested runbook]

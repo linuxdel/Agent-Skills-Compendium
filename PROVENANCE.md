@@ -56,13 +56,10 @@ Copyright (c) 2026 Jerson Boyd Milan.
 |---|---|---|
 | Source code | `src/`, `scripts/` | MIT |
 | Taxonomy and layer definitions | `content/*.yaml` | MIT |
-| Documentation | `README.md`, `docs/` | MIT |
-| Skill definitions | `content/skills/` | MIT per LICENSE; files declare `CC-BY-4.0` — **see note** |
+| Documentation | `README.md`, `docs/`, `evaluation/`, `governance/` | MIT |
+| Generated schema | `schema/` | MIT |
+| Skill definitions | `content/skills/` | MIT |
 | Third-party dependencies | `package.json` | Own licenses, unchanged |
-
-**Note:** the 76 skill definitions declare `license: CC-BY-4.0` in their own
-metadata, which is inconsistent with the repository's MIT LICENSE. See
-[COPYRIGHT.md](COPYRIGHT.md) for the two ways to reconcile this.
 
 ## Verification
 

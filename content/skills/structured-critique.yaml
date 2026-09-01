@@ -135,7 +135,7 @@ skill:
   maturity: production
   tags: [critique, review, editing, quality, feedback]
   author: Agent Skills Compendium
-  license: CC-BY-4.0
+  license: MIT
   risk_level: low
   required_permissions: [document.read]
   restricted_actions: [Blocking an artifact on preference-class findings]

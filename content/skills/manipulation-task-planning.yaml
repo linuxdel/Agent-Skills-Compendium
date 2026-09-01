@@ -144,7 +144,7 @@ skill:
   maturity: prototype
   tags: [robotics, manipulation, planning, safety, recovery]
   author: Agent Skills Compendium
-  license: CC-BY-4.0
+  license: MIT
   risk_level: critical
   required_permissions: [robot.plan, simulator.execute]
   restricted_actions: [Executing on hardware without staged verification, Relaxing the safety envelope, Operating with humans in the workspace]

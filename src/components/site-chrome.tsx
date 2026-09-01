@@ -174,7 +174,7 @@ export async function SiteFooter() {
               Jerson Boyd Milan
             </a>
           </span>
-          <span className="label">© 2026 Jerson Boyd Milan · Definitions CC-BY-4.0</span>
+          <span className="label">© 2026 Jerson Boyd Milan · MIT License</span>
         </div>
       </div>
     </footer>

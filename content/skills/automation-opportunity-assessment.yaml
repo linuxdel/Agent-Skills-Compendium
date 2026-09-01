@@ -137,7 +137,7 @@ skill:
   maturity: beta
   tags: [automation, assessment, cost, ownership, operations]
   author: Agent Skills Compendium
-  license: CC-BY-4.0
+  license: MIT
   risk_level: medium
   required_permissions: [document.write]
   restricted_actions: [Recommending automation without a named owner]

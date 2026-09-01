@@ -138,7 +138,7 @@ skill:
   maturity: beta
   tags: [multi-agent, roles, authority, permissions, verification]
   author: Agent Skills Compendium
-  license: CC-BY-4.0
+  license: MIT
   risk_level: high
   required_permissions: [policy.write]
   restricted_actions: [Granting a role verification authority over its own output, Granting tools beyond the outcome scope]

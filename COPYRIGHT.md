@@ -41,27 +41,19 @@ This notice does not claim ownership over third-party materials.
 
 ## Licensing
 
-The repository is licensed under the **MIT License** — see [LICENSE](LICENSE).
+The entire repository is licensed under the **MIT License** — see
+[LICENSE](LICENSE).
 
     MIT License
     Copyright (c) 2026 Jerson Boyd Milan
 
-### Known inconsistency to reconcile
+This covers the source code, the taxonomy and layer definitions, the skill
+definitions in `content/skills/`, the generated schema artifacts and the
+documentation. Each skill definition also carries `license: MIT` in its own
+metadata, so a definition extracted from the registry travels with its license
+attached.
 
-Each skill definition in `content/skills/` carries `license: CC-BY-4.0` in its
-own metadata, and the application surfaces that declaration. This does not
-match the repository's MIT LICENSE.
-
-Both are permissive attribution licenses, but a redistributor needs to know
-which governs the skill definitions. This should be resolved by either:
-
-1. changing the `license` field in `content/skills/*.yaml` to `MIT`, so the
-   whole repository is uniformly MIT; or
-2. adding an explicit dual-licensing statement to `LICENSE` — MIT for the
-   source code, CC-BY-4.0 for the compendium content — and keeping the
-   per-file declarations.
-
-Until resolved, treat the repository LICENSE as governing.
+Third-party dependencies retain their own licenses; see below.
 
 ## Author
 

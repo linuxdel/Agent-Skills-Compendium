@@ -141,7 +141,7 @@ skill:
   maturity: production
   tags: [security, threat-model, boundaries, adversaries, risk]
   author: Agent Skills Compendium
-  license: CC-BY-4.0
+  license: MIT
   risk_level: high
   required_permissions: [repo.read, document.write]
   restricted_actions: [Exploiting identified vulnerabilities, Testing against production without authorisation]

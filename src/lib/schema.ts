@@ -123,7 +123,7 @@ export const skillSchema = z.object({
 
   tags: z.array(z.string()).default([]),
   author: z.string().default("Agent Skills Compendium"),
-  license: z.string().default("CC-BY-4.0"),
+  license: z.string().default("MIT"),
   risk_level: z.enum(RISK_LEVELS),
   required_permissions: z.array(z.string()).default([]),
   restricted_actions: z.array(z.string()).default([]),

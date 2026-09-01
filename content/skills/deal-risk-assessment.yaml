@@ -144,7 +144,7 @@ skill:
   maturity: production
   tags: [sales, forecasting, qualification, risk, pipeline]
   author: Agent Skills Compendium
-  license: CC-BY-4.0
+  license: MIT
   risk_level: medium
   required_permissions: [crm.read]
   restricted_actions: [Adjusting forecast records without the deal owner]

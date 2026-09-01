@@ -141,7 +141,7 @@ skill:
   maturity: prototype
   tags: [multi-agent, conflict, arbitration, policy, verification]
   author: Agent Skills Compendium
-  license: CC-BY-4.0
+  license: MIT
   risk_level: medium
   required_permissions: [audit.write]
   restricted_actions: [Resolving safety-relevant conflicts by confidence score, Discarding rejected positions]
