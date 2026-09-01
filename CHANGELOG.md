@@ -73,6 +73,10 @@ project uses [Semantic Versioning](https://semver.org/).
 
 ### Changed
 
+- Commit and tag signing enabled using an Ed25519 SSH key, configured
+  repository-local so no global Git configuration was modified. Signatures
+  verify locally via `gpg.ssh.allowedSignersFile`.
+
 - Licensing unified on MIT. The skill schema previously defaulted the per-skill
   `license` field to `CC-BY-4.0`, which propagated into all 76 definitions and
   contradicted the repository's MIT LICENSE. The schema default and every
@@ -82,6 +86,6 @@ project uses [Semantic Versioning](https://semver.org/).
 
 - Skill execution is out of scope for this release; the data model does not
   preclude it
-- Local commit signing is not configured, so commits authored locally are
-  unsigned; only the GitHub-created root commit is verified
+- Commits before this point are unsigned; they were not rewritten, because
+  re-signing published history would change every commit SHA
 - Typography uses system font stacks rather than a licensed webface

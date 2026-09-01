@@ -105,11 +105,19 @@ As of **2026-09-01**:
 | Author on all commits | Jerson Boyd Milan, via GitHub noreply address |
 | License | MIT ([LICENSE](LICENSE)) |
 | Release tags | none |
-| Local commit signing | **not configured** — no SSH or GPG signing key is present on the authoring machine, so commits made locally are unsigned |
+| Local commit signing | SSH signing, configured repository-local. Key fingerprint `SHA256:RS6zOLH0t5/kKpD3KPcEpFQ6O6mmbl4rykKLdOh+sTE` |
 
-Commits authored locally are currently unsigned. Configuring an SSH or GPG
-signing key and enabling `commit.gpgsign` is the outstanding step before a
-signed `v0.1.0` tag can be created.
+Commits and tags authored in this repository are signed with an Ed25519 SSH
+key. Signatures verify locally against `~/.ssh/allowed_signers`. GitHub displays
+a commit as Verified only once the corresponding public key is registered on the
+account as a **signing key**; commits made before that registration are verified
+retroactively once it is added.
+
+Commits `a49bb37` through `1a1e99f` predate signing configuration and remain
+unsigned, with the exception of the root commit, which carries GitHub's own
+signature because it was created through the web interface. They were not
+rewritten: rewriting published history to add signatures would change every
+commit SHA, including the root SHA this document cites.
 
 Provenance claims in this file describe authorship and development history.
 They do not by themselves constitute legal protection beyond applicable law.
