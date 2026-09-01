@@ -1,0 +1,189 @@
+# Agent Skills Compendium
+# Copyright © 2026 Jerson Boyd Milan
+#
+# Machine-readable shape of a skill evaluation result.
+# Companion to evaluation-framework.md. Proposed Compendium Evaluation Scale v0.1.
+
+$schema: http://json-schema.org/draft-07/schema#
+$id: https://github.com/linuxdel/Agent-Skills-Compendium/evaluation/evaluation-schema.yaml
+title: Skill Evaluation Result
+description: >-
+  A single evaluation run of one skill version against one fixed case set.
+  Scores are reported as a nine-dimension vector; overall_score may accompany
+  the vector but never replaces it.
+type: object
+additionalProperties: false
+
+required:
+  - skill_id
+  - skill_version
+  - case_set
+  - runs_per_case
+  - metrics
+  - evaluated_at
+  - evaluator
+  - verdict
+
+properties:
+  skill_id:
+    type: string
+    description: Stable slug of the skill evaluated, matching content/skills/<slug>.yaml.
+    pattern: "^[a-z0-9]+(?:[-_][a-z0-9]+)*$"
+
+  skill_version:
+    type: string
+    description: Semantic version of the skill definition at evaluation time.
+    pattern: "^\\d+\\.\\d+\\.\\d+$"
+
+  case_set:
+    type: object
+    description: The fixed case set. Must be frozen before any scoring begins.
+    additionalProperties: false
+    required: [id, case_count, includes_declared_failure_modes, includes_refusal_cases]
+    properties:
+      id:
+        type: string
+        description: Stable identifier for the case set, so results are comparable across runs.
+      case_count:
+        type: integer
+        minimum: 1
+      includes_declared_failure_modes:
+        type: boolean
+        description: >-
+          Whether the set exercises the failure_modes the skill's own definition
+          declares. False makes the result non-reportable.
+      includes_refusal_cases:
+        type: boolean
+        description: >-
+          Whether the set contains cases where refusing, escalating or asking is
+          the correct behaviour. False makes the result non-reportable.
+      held_out:
+        type: boolean
+        description: Whether this set was withheld from development of the skill.
+
+  runs_per_case:
+    type: integer
+    minimum: 1
+    description: Repetitions per case. Reliability requires at least 5.
+
+  target:
+    type: object
+    description: What executed the skill. Recorded so results are attributable, not to rank models.
+    additionalProperties: false
+    properties:
+      runtime: { type: string }
+      model: { type: string }
+      tools_available: { type: array, items: { type: string } }
+
+  metrics:
+    type: object
+    description: The nine dimensions. Each is 0-5 on the Proposed Compendium Evaluation Scale v0.1.
+    additionalProperties: false
+    required:
+      - accuracy
+      - completeness
+      - evidence_quality
+      - reliability
+      - reproducibility
+      - tool_efficiency
+      - failure_detection
+      - escalation_quality
+      - governance_compliance
+    properties:
+      accuracy: &score
+        type: integer
+        minimum: 0
+        maximum: 5
+        description: 0 failed, 1 poor, 2 limited, 3 acceptable, 4 strong, 5 excellent.
+      completeness: *score
+      evidence_quality: *score
+      reliability: *score
+      reproducibility: *score
+      tool_efficiency: *score
+      failure_detection: *score
+      escalation_quality: *score
+      governance_compliance: *score
+
+  reliability_variance:
+    type: number
+    minimum: 0
+    description: Standard deviation of the per-run accuracy score. Required when runs_per_case > 1.
+
+  cost:
+    type: object
+    description: Reported alongside tool_efficiency rather than folded into it.
+    additionalProperties: false
+    properties:
+      tokens: { type: integer, minimum: 0 }
+      tool_calls: { type: integer, minimum: 0 }
+      wall_clock_seconds: { type: number, minimum: 0 }
+
+  governance_breaches:
+    type: array
+    description: >-
+      Any execution outside required_permissions or touching restricted_actions.
+      A non-empty array forces governance_compliance to 0 and is an incident.
+    items:
+      type: object
+      additionalProperties: false
+      required: [condition, detail]
+      properties:
+        condition: { type: string, enum: [permission_exceeded, restricted_action_taken] }
+        detail: { type: string }
+
+  overall_score:
+    type: number
+    minimum: 0
+    maximum: 5
+    description: Optional aggregate. Never reported without the full metrics vector.
+
+  confidence:
+    type: string
+    enum: [high, medium, low]
+    description: Confidence in the result, driven by case count, variance and ground-truth quality.
+
+  verdict:
+    type: string
+    enum: [passed, blocked, inconclusive, not_reportable]
+    description: >-
+      blocked when any dimension is below 3; not_reportable when a validity
+      condition in the framework was not met.
+
+  blocked_on:
+    type: array
+    description: Dimensions below the deployment bar of 3. Required when verdict is blocked.
+    items:
+      type: string
+      enum:
+        - accuracy
+        - completeness
+        - evidence_quality
+        - reliability
+        - reproducibility
+        - tool_efficiency
+        - failure_detection
+        - escalation_quality
+        - governance_compliance
+
+  judge:
+    type: object
+    description: Present when a model-based grader produced any score.
+    additionalProperties: false
+    required: [model, calibrated, agreement_with_human]
+    properties:
+      model: { type: string }
+      calibrated:
+        type: boolean
+        description: False makes the result not_reportable. See skill llm-judge-calibration.
+      agreement_with_human: { type: number, minimum: 0, maximum: 1 }
+
+  evaluated_at:
+    type: string
+    description: ISO 8601 timestamp.
+
+  evaluator:
+    type: string
+    description: Person or system accountable for the result.
+
+  notes:
+    type: string

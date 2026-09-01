@@ -46,6 +46,18 @@ project uses [Semantic Versioning](https://semver.org/).
   stroke weight derived from render size; matching favicon
 - Interface screenshots in `docs/screenshots/`, captured at 1440w @2x against
   a production build, referenced from the README
+- Skill evaluation framework: nine scored dimensions, validity conditions for a
+  reportable result, and a deployment bar, with a machine-readable result schema
+- Skill governance framework: risk classification, permission scoping,
+  human-approval triggers, audit, escalation and data-handling requirements,
+  with a runtime-enforceable policy schema
+- Portable schema artifacts (`schema/skill.schema.json`, `.yaml`) generated from
+  the canonical zod definition and self-tested against all 76 skills
+- `SKILL.md` package exporter, rendering every skill into a portable packaging
+  format without introducing a second source of truth
+- Interoperability documentation positioning the project relative to tool
+  protocols, packaging formats and agent runtimes
+- README sections covering ecosystem position and what the project is not
 - Authorship and provenance documentation
 
 ### Fixed

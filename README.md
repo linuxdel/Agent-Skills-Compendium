@@ -11,6 +11,69 @@ This is a **capability registry**, not a prompt library. The distinction it is b
 
 A skill may invoke several tools to produce a validated outcome.
 
+## Where this sits
+
+```
+┌───────────────────────────────┐
+│          AI MODELS            │
+│    Intelligence / Reasoning   │
+└───────────────┬───────────────┘
+                ↓
+┌───────────────────────────────┐
+│        TOOL PROTOCOLS         │
+│     Connectivity / Access     │   MCP, function calling, HTTP
+└───────────────┬───────────────┘
+                ↓
+┌───────────────────────────────┐
+│             TOOLS             │
+│      APIs / Data / Systems    │
+└───────────────┬───────────────┘
+                ↓
+╔═══════════════════════════════╗
+║    AGENT SKILLS COMPENDIUM    ║
+║                               ║
+║  Taxonomy                     ║
+║  Ontology                     ║
+║  Specification                ║
+║  Composition                  ║
+║  Evaluation                   ║
+║  Governance                   ║
+╚═══════════════╤═══════════════╝
+                ↓
+┌───────────────────────────────┐
+│           WORKFLOWS           │
+│      Skill Composition        │
+└───────────────┬───────────────┘
+                ↓
+┌───────────────────────────────┐
+│            AGENTS             │
+│     Autonomous Execution      │
+└───────────────────────────────┘
+```
+
+## What this is not
+
+**Not a prompt library.** A prompt produces a result once. A skill declares a
+trigger, typed inputs, a procedure, validation criteria, failure modes and an
+escalation path — and can therefore be tested, governed and composed.
+
+**Not a tool protocol.** MCP and equivalents answer how an agent *reaches* a
+system. A skill answers what it is trying to *accomplish* and how it knows it
+succeeded. They compose; neither replaces the other.
+
+**Not a replacement for `SKILL.md`.** That is a packaging format. A definition
+here renders *into* it — `npm run export:skills` produces all 76 as SKILL.md
+packages.
+
+**Not a runtime.** The definitions are data. Enforcement of the governance model
+belongs to whatever executes them, deliberately, so the definitions stay
+portable.
+
+**Not a finished standard.** An open reference framework at v0.1, stable enough
+to build against and expected to move.
+
+See [docs/INTEROPERABILITY.md](docs/INTEROPERABILITY.md) for the full position.
+
 ## Authorship
 
 **Created and originally architected by Jerson Boyd Milan**
@@ -171,6 +234,24 @@ level in the chain, and exports the result as an agent specification.
 
 ![Agent Skills Compendium home](docs/screenshots/01-home.png)
 
+## Frameworks
+
+Beyond the registry itself, three framework layers make the definitions
+testable, governable and portable:
+
+| | |
+|---|---|
+| [Evaluation](evaluation/evaluation-framework.md) | Nine scored dimensions with validity conditions for a reportable result. Machine-readable via [`evaluation-schema.yaml`](evaluation/evaluation-schema.yaml). |
+| [Governance](governance/skill-governance.md) | Risk classification, permission scoping, human-approval triggers, audit and escalation requirements. Machine-readable via [`governance-schema.yaml`](governance/governance-schema.yaml). |
+| [Portable schema](schema/) | JSON Schema and YAML generated from the canonical zod definition, self-tested against all 76 skills. |
+
+Generated artifacts are never hand-maintained:
+
+```bash
+npm run generate:schema   # schema/ from src/lib/schema.ts, self-tests on all 76 skills
+npm run export:skills     # dist/skills/**/SKILL.md packages
+```
+
 ## Project documents
 
 | Document | Purpose |
@@ -185,6 +266,9 @@ level in the chain, and exports the result as an agent specification.
 | [docs/ORIGIN.md](docs/ORIGIN.md) | Conceptual origin of the framework |
 | [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) | The five-layer model and skill specification |
 | [docs/TAXONOMY.md](docs/TAXONOMY.md) | All 20 categories with their capabilities |
+| [docs/INTEROPERABILITY.md](docs/INTEROPERABILITY.md) | Position relative to MCP, SKILL.md and agent runtimes |
+| [evaluation/](evaluation/evaluation-framework.md) | Skill evaluation framework and result schema |
+| [governance/](governance/skill-governance.md) | Skill governance model and policy schema |
 
 ---
 

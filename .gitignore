@@ -4,6 +4,7 @@ node_modules
 # --- build output ---
 .next
 out
+dist
 *.tsbuildinfo
 next-env.d.ts
 

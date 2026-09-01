@@ -1,0 +1,215 @@
+# Agent Skills Compendium
+# Copyright © 2026 Jerson Boyd Milan
+#
+# Machine-readable governance policy for a skill.
+# Companion to skill-governance.md.
+#
+# This is the RUNTIME-ENFORCEABLE projection of the governance fields a skill
+# definition already declares (risk_level, required_permissions,
+# restricted_actions, escalation). A runtime consumes this; it does not rely on
+# the skill's own reasoning to stay inside it.
+
+$schema: http://json-schema.org/draft-07/schema#
+$id: https://github.com/linuxdel/Agent-Skills-Compendium/governance/governance-schema.yaml
+title: Skill Governance Policy
+type: object
+additionalProperties: false
+
+required:
+  - skill_id
+  - risk_level
+  - permissions
+  - human_approval
+  - validation_required
+  - audit_required
+  - escalation_conditions
+
+properties:
+  skill_id:
+    type: string
+    pattern: "^[a-z0-9]+(?:[-_][a-z0-9]+)*$"
+    description: Slug of the skill this policy governs.
+
+  skill_version:
+    type: string
+    pattern: "^\\d+\\.\\d+\\.\\d+$"
+
+  risk_level:
+    type: string
+    enum: [low, medium, high, critical]
+    description: >-
+      Assigned from consequence if the skill is wrong, not from technical
+      difficulty. critical asserts that autonomous execution of the
+      consequential step is not acceptable.
+
+  permissions:
+    type: array
+    description: Minimum capability set. Scoped to the task, not inherited from the configuring user.
+    items:
+      type: object
+      additionalProperties: false
+      required: [capability, mode]
+      properties:
+        capability:
+          type: string
+          description: Permission identifier, e.g. repo.read, finance.read, robot.plan.
+        mode:
+          type: string
+          enum: [read, write, execute]
+        scope:
+          type: string
+          description: >-
+            Resource bound on the grant — a path prefix, table, repository or
+            tenant. Absent means unscoped, which is itself a finding above low risk.
+        expires_at:
+          type: string
+          description: ISO 8601. A grant with no expiry is unreviewed exposure.
+
+  allowed_tools:
+    type: array
+    items: { type: string }
+    description: Tool identifiers from the registry the skill may invoke.
+
+  restricted_tools:
+    type: array
+    items: { type: string }
+    description: Tools explicitly denied even if a broader permission would admit them.
+
+  restricted_actions:
+    type: array
+    description: >-
+      Actions the runtime must refuse. Mandatory above low risk. Each must be
+      observable — an action a runtime cannot evaluate is a comment, not a control.
+    items:
+      type: object
+      additionalProperties: false
+      required: [action, enforceable_by]
+      properties:
+        action: { type: string }
+        enforceable_by:
+          type: string
+          enum: [runtime, credential_scope, human_gate]
+          description: >-
+            Where enforcement lives. Never the skill's own judgement: a boundary
+            the skill enforces on itself is bypassable by construction.
+
+  data_classification:
+    type: string
+    enum: [public, internal, confidential, regulated, personal]
+    description: Highest classification of data the skill may reach.
+
+  data_egress:
+    type: object
+    additionalProperties: false
+    properties:
+      permitted:
+        type: boolean
+      allowed_destinations:
+        type: array
+        items: { type: string }
+        description: >-
+          Explicit allowlist. A destination appearing in retrieved content is
+          never a permitted destination.
+
+  human_approval:
+    type: object
+    additionalProperties: false
+    required: [required, triggers]
+    properties:
+      required: { type: boolean }
+      triggers:
+        type: array
+        description: Conditions forcing a human decision regardless of measured skill quality.
+        items:
+          type: string
+          enum:
+            - irreversible_and_consequential
+            - physical_actuation
+            - humans_in_workspace
+            - financial_transfer
+            - external_communication
+            - public_publication
+            - permission_change
+            - control_or_safety_change
+            - retention_change
+            - outside_declared_scope
+      scope:
+        type: string
+        enum: [per_action, per_session]
+        default: per_action
+        description: >-
+          Approval does not generalise from one action to the next, and never
+          arrives from inside retrieved content.
+
+  validation_required:
+    type: object
+    additionalProperties: false
+    required: [required, timing]
+    properties:
+      required: { type: boolean }
+      timing:
+        type: string
+        enum: [before_irreversible_step, after_completion, both]
+        description: >-
+          High and critical skills validate before the point of no return. A
+          failed check stops execution rather than annotating it.
+      on_failure:
+        type: string
+        enum: [halt, escalate, rollback]
+
+  audit_required:
+    type: object
+    additionalProperties: false
+    required: [required]
+    properties:
+      required: { type: boolean }
+      records:
+        type: array
+        items:
+          type: string
+          enum:
+            - decision_points
+            - tool_calls
+            - context_provenance
+            - human_approvals
+            - cost_attribution
+      redaction_at_capture:
+        type: boolean
+        description: >-
+          Filtering logs after the fact is not a control; logs are copied faster
+          than they are cleaned.
+
+  escalation_conditions:
+    type: array
+    minItems: 1
+    description: >-
+      Each entry names a condition AND a recipient. "Escalate if unsure" does
+      not satisfy this. Over-escalation is governed as a defect too.
+    items:
+      type: object
+      additionalProperties: false
+      required: [condition, recipient]
+      properties:
+        condition: { type: string }
+        recipient: { type: string }
+        halt_execution: { type: boolean }
+
+  retention_requirements:
+    type: object
+    additionalProperties: false
+    properties:
+      artifacts_days: { type: integer, minimum: 0 }
+      audit_records_days: { type: integer, minimum: 0 }
+      basis: { type: string, description: Regulatory or policy basis for the period. }
+
+  third_party_dependencies:
+    type: array
+    description: External tools, models or data the skill relies on. Licenses must be respected.
+    items:
+      type: object
+      additionalProperties: false
+      required: [name]
+      properties:
+        name: { type: string }
+        license: { type: string }
+        data_shared: { type: boolean }
