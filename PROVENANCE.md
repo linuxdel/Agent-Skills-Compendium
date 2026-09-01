@@ -103,8 +103,8 @@ As of **2026-09-01**:
 | Repository | https://github.com/linuxdel/Agent-Skills-Compendium |
 | Visibility | Public |
 | Default branch | `main` |
-| Commits | 3 |
 | Root commit | `a49bb37` — created via the GitHub web interface, carries GitHub's signature |
+| Commit history | See the repository's commit log; not mirrored here, so this file does not go stale on every commit |
 | Author on all commits | Jerson Boyd Milan, via GitHub noreply address |
 | License | MIT ([LICENSE](LICENSE)) |
 | Release tags | none |
