@@ -12,8 +12,8 @@ project uses [Semantic Versioning](https://semver.org/).
 
 ## [0.1.0] — 2026-09-01
 
-> Version prepared. Not yet tagged or published; no Git tag or public release
-> exists at the time of writing.
+> Published to GitHub on 2026-09-01. Not yet tagged: no `v0.1.0` Git tag or
+> GitHub release exists, pending commit-signing configuration.
 
 ### Added
 
@@ -42,7 +42,18 @@ project uses [Semantic Versioning](https://semver.org/).
 - SEO surface: unique routes for every skill, category and layer, plus sitemap
   and robots
 - Typed analytics event surface (queued client-side; no collector wired)
+- Node-link logo rendered as inline SVG, themed via `currentColor`, with
+  stroke weight derived from render size; matching favicon
+- Interface screenshots in `docs/screenshots/`, captured at 1440w @2x against
+  a production build, referenced from the README
 - Authorship and provenance documentation
+
+### Fixed
+
+- Registry filter input could be clipped by the CLEAR control, truncating its
+  placeholder text; the input now shrinks correctly within its row
+- Header logo stroke rendered as a 0.22px hairline, because a fixed stroke in
+  the 200-unit viewBox does not survive scaling down to header size
 
 ### Known limitations
 
@@ -50,5 +61,6 @@ project uses [Semantic Versioning](https://semver.org/).
   preclude it
 - Skill definitions declare `CC-BY-4.0` while the repository LICENSE is MIT;
   this inconsistency is unresolved (see [COPYRIGHT.md](COPYRIGHT.md))
-- Local commit signing is not yet configured
+- Local commit signing is not configured, so commits authored locally are
+  unsigned; only the GitHub-created root commit is verified
 - Typography uses system font stacks rather than a licensed webface

@@ -78,19 +78,41 @@ Project provenance is additionally represented through:
 - [CITATION.cff](CITATION.cff)
 - [docs/ORIGIN.md](docs/ORIGIN.md)
 
+### Repository history
+
+The public repository was created on **2026-09-01** at
+https://github.com/linuxdel/Agent-Skills-Compendium.
+
+An earlier repository of the same name was created and then deleted and
+recreated on the same day, to remove an incorrect co-author attribution that
+had been recorded in its initial commit history. No content was lost in the
+recreate; the compendium's files and documentation are unchanged. The current
+repository's creation timestamp therefore post-dates the start of the work it
+contains, and its history begins with the recreated root commit.
+
+This note exists so that the repository's creation date is not mistaken for the
+date the project began. See [docs/ORIGIN.md](docs/ORIGIN.md) for the project's
+conceptual origin.
+
 ### Current verification status
 
-As of this document's creation:
+As of **2026-09-01**:
 
-- Git repository: `main` branch
-- Git remote: https://github.com/linuxdel/Agent-Skills-Compendium
-- Repository visibility: public
-- License: MIT
-- Commit signing: **not configured locally** (no SSH or GPG signing key
-  present on the authoring machine). The repository's initial commit was
-  created through the GitHub web interface and carries GitHub's signature;
-  commits made locally are currently unsigned.
-- Signed release tags: none
+| | |
+|---|---|
+| Repository | https://github.com/linuxdel/Agent-Skills-Compendium |
+| Visibility | Public |
+| Default branch | `main` |
+| Commits | 3 |
+| Root commit | `a49bb37` — created via the GitHub web interface, carries GitHub's signature |
+| Author on all commits | Jerson Boyd Milan, via GitHub noreply address |
+| License | MIT ([LICENSE](LICENSE)) |
+| Release tags | none |
+| Local commit signing | **not configured** — no SSH or GPG signing key is present on the authoring machine, so commits made locally are unsigned |
+
+Commits authored locally are currently unsigned. Configuring an SSH or GPG
+signing key and enabling `commit.gpgsign` is the outstanding step before a
+signed `v0.1.0` tag can be created.
 
 Provenance claims in this file describe authorship and development history.
 They do not by themselves constitute legal protection beyond applicable law.
