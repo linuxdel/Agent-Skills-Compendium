@@ -78,9 +78,9 @@ export function SkillFilters({ facets, total }: { facets: Facet[]; total: number
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           onBlur={() => submitQuery(query)}
-          placeholder="Filter by capability, tag or tool…"
+          placeholder="Filter capabilities…"
           aria-label="Search skills"
-          className="w-full bg-transparent text-[0.9375rem] outline-none placeholder:text-[var(--color-ink-faint)]"
+          className="w-full min-w-0 bg-transparent text-[0.9375rem] outline-none placeholder:text-[var(--color-ink-faint)]"
         />
         {activeCount > 0 ? (
           <button

@@ -131,6 +131,46 @@ The full admission standard is at `/contribute`.
   anything. Execution is deliberately out of scope for v1 but nothing in the data model
   blocks it.
 
+## Interface
+
+### Registry
+
+Search and seven filter facets over the whole registry — architectural layer,
+category, complexity, maturity, build speed, shareability and risk level. Facet
+counts are live, and options that would return nothing are disabled rather than
+hidden.
+
+![Skill registry filtered to the L5 Agentic layer](docs/screenshots/02-skill-registry.png)
+
+### Skill detail
+
+Every skill renders its full specification: purpose, trigger, typed inputs,
+tools, procedure, decision rules, outputs, validation, failure modes,
+escalation, worked examples, relationships and the governance surface
+(risk level, required permissions, restricted actions).
+
+![Prompt Injection Defence skill specification](docs/screenshots/03-skill-detail.png)
+
+### Architectural layers
+
+![The five architectural layers](docs/screenshots/04-layers.png)
+
+### Category view
+
+![Agent Security category](docs/screenshots/05-category.png)
+
+### Composer
+
+Select skills and the composer resolves their prerequisites, orders them for
+execution, aggregates required permissions and tools, reports the highest risk
+level in the chain, and exports the result as an agent specification.
+
+![Skill composer](docs/screenshots/06-composer.png)
+
+### Home
+
+![Agent Skills Compendium home](docs/screenshots/01-home.png)
+
 ## Project documents
 
 | Document | Purpose |
