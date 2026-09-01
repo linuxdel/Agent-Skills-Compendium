@@ -59,8 +59,8 @@ export async function SiteHeader() {
   return (
     <header className="sticky top-0 z-40 border-b border-[var(--color-rule)] bg-[var(--color-paper)]/85 backdrop-blur-md">
       <div className="mx-auto flex max-w-[1180px] items-center justify-between gap-4 px-5 py-3">
-        <Link href="/" className="flex min-w-0 items-baseline gap-2.5">
-          <Logo size={26} className="shrink-0 text-[var(--color-accent)]" />
+        <Link href="/" className="flex min-w-0 items-center gap-2.5">
+          <Logo size={26} className="shrink-0 text-[var(--color-ink)]" />
           <span className="truncate text-[0.9375rem] font-medium tracking-[-0.01em]">
             Agent Skills Compendium
           </span>

@@ -54,6 +54,10 @@ project uses [Semantic Versioning](https://semver.org/).
   placeholder text; the input now shrinks correctly within its row
 - Header logo stroke rendered as a 0.22px hairline, because a fixed stroke in
   the 200-unit viewBox does not survive scaling down to header size
+- Header logo sat 7.6px above the wordmark: the link used baseline alignment,
+  and an inline SVG's baseline is its bottom edge rather than a text baseline
+- Header logo recoloured from the accent to the ink token, so it matches the
+  wordmark and inverts correctly in dark mode
 
 ### Known limitations
 
